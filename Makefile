@@ -13,7 +13,7 @@ startup.o: startup.s
 
 MCPU_ZIG = $(subst -,_,$(MCPU))
 
-init.o: src/init.zig
+init.o: src/init.zig src/*.zig src/**/*.zig
 	zig build-obj src/init.zig  -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
 
 init.elf: init.o startup.o map.ld
