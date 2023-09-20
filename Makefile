@@ -1,0 +1,31 @@
+AS = arm-none-eabi-as
+LD = arm-none-eabi-ld
+OBJCOPY = arm-none-eabi-objcopy
+ZIG_TARGET = arm-freestanding-eabihf
+MCPU = arm1176jzf-s
+QEMU=qemu-system-arm
+QEMU_MACHINE=raspi0
+
+all: init.bin
+
+startup.o: startup.s
+	$(AS) -mcpu=$(MCPU) -g startup.s -o startup.o
+
+MCPU_ZIG = $(subst -,_,$(MCPU))
+
+init.o: src/init.zig
+	zig build-obj src/init.zig  -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
+
+init.elf: init.o startup.o map.ld
+	$(LD) -T map.ld init.o startup.o -o init.elf
+
+init.bin: init.elf
+	$(OBJCOPY) -O binary init.elf init.bin
+
+.PHONY: clean qemu
+
+clean:
+	rm -f *.o *.elf *.bin
+
+qemu:
+	$(QEMU) -m 512 -M $(QEMU_MACHINE) -nographic -kernel init.bin
