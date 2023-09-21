@@ -1,17 +1,32 @@
 const uart = @import("./mmio/uart.zig");
+const syscalls = @import("./syscalls/syscalls.zig");
+const print = @import("./lib/print.zig");
 
 export fn init() void {
     uart.init();
+    syscalls.init();
+    print.debug();
 
-    const msg: [*]const u8 = "Hello, world!\n\r";
+    print.prints("Switching to user mode\n\r");
+    start_user_mode();
+}
 
-    var i: u32 = 0;
-    while (msg[i] != 0) {
-        uart.write(msg[i]);
-        i += 1;
-    }
+fn start_user_mode() void {
+    asm volatile (
+        \\ cps #16
+        \\ ldr sp, =user_stack_top
+    );
+    main();
+    print.prints("User mode returned\n\r");
+    while (true) {}
+}
+
+fn main() void {
+    print.debug();
 
     while (true) {
-        uart.write(uart.read());
+        _ = uart.read();
+        syscalls.dbg(0);
+        print.debug();
     }
 }
