@@ -1,11 +1,15 @@
 const uart = @import("./mmio/uart.zig");
 const syscalls = @import("./syscalls/syscalls.zig");
+const exceptions = @import("./exceptions/syscalls.zig");
 const print = @import("./lib/print.zig");
+const mbox = @import("./mmio/mbox.zig");
 
 export fn init() void {
     uart.init();
     syscalls.init();
+    exceptions.init();
     print.debug();
+    mbox.init_fb();
 
     print.prints("Switching to user mode\n\r");
     start_user_mode();

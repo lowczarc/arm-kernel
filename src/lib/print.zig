@@ -23,8 +23,15 @@ pub fn printx(x: u32) void {
     }
 }
 
+pub fn printxln(x: u32) void {
+    printx(x);
+    prints("\n\r");
+}
+
 pub fn debug() void {
-    const CPSR = asm volatile("mrs %[ret], cpsr": [ret] "=r" (->usize));
+    const CPSR = asm volatile ("mrs %[ret], cpsr"
+        : [ret] "=r" (-> usize),
+    );
 
     const mode = CPSR & 0xf;
 
@@ -38,7 +45,7 @@ pub fn debug() void {
         10 => "Hypervisor",
         11 => "Undefined",
         15 => "System",
-        else => "Unknown"
+        else => "Unknown",
     };
 
     prints("DEBUG:\n\r");
