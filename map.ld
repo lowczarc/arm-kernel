@@ -13,4 +13,6 @@ SECTIONS
  stack_top = .;
  . = . + 0x100; /* 256B of stack memory */
  abort_stack_top = .;
+ . = ALIGN(4096);
+ __end = .;
 }

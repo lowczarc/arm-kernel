@@ -5,7 +5,6 @@ comptime {
         \\ .global
         \\ .type __undefined_instruction_handler, %function
         \\ __undefined_instruction_handler:
-        \\      ldr sp, =abort_stack_top
         \\      push {r0-r12, lr}
         \\      mov r0, #1
         \\      subs r1, lr, #4
@@ -23,7 +22,6 @@ comptime {
         \\ .global
         \\ .type __prefetch_abort_handler, %function
         \\ __prefetch_abort_handler:
-        \\      ldr sp, =abort_stack_top
         \\      push {r0-r12, lr}
         \\      mov r0, #2
         \\      subs r1, lr, #4
@@ -41,7 +39,6 @@ comptime {
         \\ .global
         \\ .type __data_abort_handler, %function
         \\ __data_abort_handler:
-        \\      ldr sp, =abort_stack_top
         \\      push {r0-r12, lr}
         \\      mov r0, #3
         \\      subs r1, lr, #4
