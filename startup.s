@@ -6,6 +6,7 @@ _Reset:
 
 // We set the mode bits to system mode
  MRS r3, cpsr
+ MOV r4, r3
  ORR r3, r3, #0x1F
  MSR cpsr, r3
 
@@ -19,7 +20,7 @@ _Reset:
  LDR sp, =abort_stack_top
 
  // We come back to supervisor mode
- MSR cpsr, r3
+ MSR cpsr, r4
 
  BL init // We call the init function defined in src/init.zig
  B . // We loop forever to prevent the program from going bananas
