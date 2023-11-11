@@ -79,7 +79,7 @@ const ATAGS = struct {
     CmdLine: ?*ATAG_CMDLINE,
 };
 
-var ATAG: ATAGS = undefined;
+pub var ATAG: ATAGS = undefined;
 
 pub fn init(atags: u32) void {
     var header: *ATAG_HEADER = @ptrFromInt(atags);
@@ -88,10 +88,7 @@ pub fn init(atags: u32) void {
         if (header.Tag == 0) {
             break;
         }
-        print.prints("Tag: ");
-        print.printx(header.Tag);
-        print.prints(", Size: ");
-        print.printxln(header.TagSize);
+        print.println(.{ "Tag: ", header.Tag, ", Size: ", header.TagSize });
         switch (header.Tag) {
             0x54410001 => {
                 ATAG.Core = @ptrFromInt(@intFromPtr(header) + 8);
@@ -132,21 +129,18 @@ pub fn init(atags: u32) void {
     if (core == null) {
         print.prints("ATAG.Core is undefined\n");
     } else {
-        print.prints("ATAG.Core:\n\r\tFlags: ");
-        print.printxln(core.?.Flags);
-        print.prints("\tPageSize: ");
-        print.printxln(core.?.PageSize);
-        print.prints("\tRootDev: ");
-        print.printxln(core.?.RootDev);
+        print.prints("ATAG.Core:\n\r");
+        print.println(.{ "\tFlags: ", core.?.Flags });
+        print.println(.{ "\tPageSize: ", core.?.PageSize });
+        print.println(.{ "\tRootDev: ", core.?.RootDev });
     }
 
     const mem = ATAG.Mem;
     if (mem == null) {
         print.prints("ATAG.Mem is undefined\n");
     } else {
-        print.prints("ATAG.Mem:\n\r\tSize: ");
-        print.printxln(mem.?.Size);
-        print.prints("\tStart: ");
-        print.printxln(mem.?.Start);
+        print.prints("ATAG.Mem:\n\r");
+        print.println(.{ "\tSize: ", mem.?.Size });
+        print.println(.{ "\tStart: ", mem.?.Start });
     }
 }

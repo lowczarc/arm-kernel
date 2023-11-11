@@ -23,8 +23,23 @@ pub fn printx(x: u32) void {
     }
 }
 
-pub fn printxln(x: u32) void {
-    printx(x);
+pub fn printany(arg: anytype) void {
+    if (@typeInfo(@TypeOf(arg)) == .Int) {
+        printx(arg);
+    } else if ((@typeInfo(@TypeOf(arg)) == .Array) and (@typeInfo(@TypeOf(arg)).Array.child == u8)) {
+        prints(&arg);
+    } else if (@typeInfo(@TypeOf(arg)) == .Pointer) {
+        prints(arg);
+    } else {
+        prints("Unknown type: ");
+        prints(@typeName(@TypeOf(arg)));
+    }
+}
+
+pub fn println(args: anytype) void {
+    inline for (args) |arg| {
+        printany(arg);
+    }
     prints("\n\r");
 }
 
@@ -49,9 +64,5 @@ pub fn debug() void {
     };
 
     prints("DEBUG:\n\r");
-    prints("\tMode: ");
-    prints(modeStr);
-    prints(" (CPSR = ");
-    printx(CPSR);
-    prints(")\n\r");
+    println(.{ "\tMode: ", modeStr, "(CPSR = ", CPSR, ")" });
 }

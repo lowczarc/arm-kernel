@@ -70,8 +70,7 @@ export fn panic_handler(code: u32, from: u32) usize {
         else => print.prints("## Cause: Unknown\n\r"),
     }
 
-    print.prints("## From: ");
-    print.printxln(from);
+    print.println(.{ "## From:", from });
     while (true) {}
     return 0;
 }

@@ -4,6 +4,7 @@ const exceptions = @import("./exceptions/syscalls.zig");
 const print = @import("./lib/print.zig");
 const mbox = @import("./mmio/mbox.zig");
 const atags = @import("./mmio/atags.zig");
+const pages = @import("./mem/pages.zig");
 
 export fn init(r0: u32, r1: u32, r2: u32) void {
     _ = r0;
@@ -11,13 +12,13 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     uart.init();
     exceptions.init();
-    print.debug();
-
     atags.init(r2);
 
-    syscalls.init();
-    mbox.init_fb();
+    pages.init();
 
+    syscalls.init();
+
+    print.debug();
     print.prints("Switching to user mode\n\r");
     start_user_mode();
 }

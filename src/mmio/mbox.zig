@@ -54,11 +54,7 @@ const INIT_FB_MSG: [10]u32 align(16) = [_]u32{
 pub fn init_fb() void {
     var p: u28 = @intCast((@intFromPtr(&INIT_FB_MSG) + 0x40000000) >> 4);
 
-    print.printxln(p);
-
     write(p, 1);
 
-    print.printxln(read(1));
-
-    print.printxln(INIT_FB_MSG[9]);
+    @panic("Unimplemented");
 }
