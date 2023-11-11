@@ -26,6 +26,12 @@ pub fn printx(x: u32) void {
 pub fn printany(arg: anytype) void {
     if (@typeInfo(@TypeOf(arg)) == .Int) {
         printx(arg);
+    } else if (@typeInfo(@TypeOf(arg)) == .Bool) {
+        if (arg) {
+            prints("true");
+        } else {
+            prints("false");
+        }
     } else if ((@typeInfo(@TypeOf(arg)) == .Array) and (@typeInfo(@TypeOf(arg)).Array.child == u8)) {
         prints(&arg);
     } else if (@typeInfo(@TypeOf(arg)) == .Pointer) {

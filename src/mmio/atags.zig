@@ -88,7 +88,6 @@ pub fn init(atags: u32) void {
         if (header.Tag == 0) {
             break;
         }
-        print.println(.{ "Tag: ", header.Tag, ", Size: ", header.TagSize });
         switch (header.Tag) {
             0x54410001 => {
                 ATAG.Core = @ptrFromInt(@intFromPtr(header) + 8);
@@ -123,24 +122,5 @@ pub fn init(atags: u32) void {
         }
         const new_header: *ATAG_HEADER = @ptrFromInt(@intFromPtr(header) + (header.TagSize * 4));
         header = new_header;
-    }
-
-    const core = ATAG.Core;
-    if (core == null) {
-        print.prints("ATAG.Core is undefined\n");
-    } else {
-        print.prints("ATAG.Core:\n\r");
-        print.println(.{ "\tFlags: ", core.?.Flags });
-        print.println(.{ "\tPageSize: ", core.?.PageSize });
-        print.println(.{ "\tRootDev: ", core.?.RootDev });
-    }
-
-    const mem = ATAG.Mem;
-    if (mem == null) {
-        print.prints("ATAG.Mem is undefined\n");
-    } else {
-        print.prints("ATAG.Mem:\n\r");
-        print.println(.{ "\tSize: ", mem.?.Size });
-        print.println(.{ "\tStart: ", mem.?.Start });
     }
 }
