@@ -28,6 +28,16 @@ export fn syscall_handler() usize {
         consts.SYS_RESTART => asm volatile ("b _Reset"
             : [ret] "=r" (-> usize),
         ),
+        consts.SYS_EXIT => {
+            print.println(.{ "Exiting..." });
+            // This a QEMU specific signal
+            asm volatile (
+                \\ svc #0x00123456
+                :: [arg1] "{r0}" (0x18),
+                  [arg2] "{r1}" (0x20026),
+            );
+            return 0;
+        },
         consts.SYS_DBG => {
             print.debug();
             return 0;

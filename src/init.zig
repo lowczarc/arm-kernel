@@ -19,7 +19,7 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
     syscalls.init();
 
     print.debug();
-    print.prints("Switching to user mode\n\r");
+    print.println(.{"Switching to user mode"});
     start_user_mode();
 }
 export fn start_user_mode() void {
@@ -27,16 +27,14 @@ export fn start_user_mode() void {
         \\ cps #16
     );
     main();
-    print.prints("User mode returned\n\r");
-    while (true) {}
+    print.println(.{"User mode returned"});
+    syscalls.exit();
 }
 
 fn main() void {
+    print.println(.{"Debug user mode:"});
     print.debug();
 
-    while (true) {
-        _ = uart.read();
-        syscalls.dbg(0);
-        print.debug();
-    }
+    print.println(.{"Syscall debug:"});
+    syscalls.dbg();
 }

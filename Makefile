@@ -9,26 +9,26 @@ QEMU_MACHINE=raspi0
 all: init.bin
 
 startup.o: startup.s
-	$(AS) -mcpu=$(MCPU) -g startup.s -o startup.o
+	@$(AS) -mcpu=$(MCPU) -g startup.s -o startup.o
 
 MCPU_ZIG = $(subst -,_,$(MCPU))
 
 init.o: src/init.zig src/*.zig src/**/*.zig
-	zig build-obj -fno-strip src/init.zig  -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
+	@zig build-obj -fno-strip src/init.zig  -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
 
 init.elf: init.o startup.o map.ld
-	$(LD) -T map.ld init.o startup.o -o init.elf
+	@$(LD) -T map.ld init.o startup.o -o init.elf -nostdlib -z noexecstack -no-warn-rwx-segments
 
 init.bin: init.elf
-	$(OBJCOPY) -O binary init.elf init.bin
+	@$(OBJCOPY) -O binary init.elf init.bin
 
 .PHONY: clean qemu
 
 clean:
-	rm -f *.o *.elf *.bin
+	@rm -f *.o *.elf *.bin
 
 qemu:
-	$(QEMU) -M $(QEMU_MACHINE) -nographic -kernel init.bin
+	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin
 
 qemu-dbg:
-	$(QEMU) -M $(QEMU_MACHINE) -nographic -kernel init.bin -s -S
+	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin -s -S

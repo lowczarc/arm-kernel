@@ -48,6 +48,10 @@ pub fn restart_syscall() void {
     _ = syscall0(consts.SYS_RESTART);
 }
 
-pub fn dbg(arg1: usize) void {
-    _ = syscall1(consts.SYS_DBG, arg1);
+pub fn dbg() void {
+    _ = syscall0(consts.SYS_DBG);
+}
+
+pub fn exit() void {
+    _ = syscall0(consts.SYS_EXIT);
 }
