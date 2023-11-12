@@ -2,9 +2,9 @@ AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
 OBJCOPY = arm-none-eabi-objcopy
 ZIG_TARGET = arm-freestanding-eabihf
-MCPU = arm1176jzf-s
+MCPU = cortex-a7
 QEMU=qemu-system-arm
-QEMU_MACHINE=raspi0
+QEMU_MACHINE=raspi2b
 
 all: init.bin
 
@@ -29,6 +29,9 @@ clean:
 
 qemu:
 	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin
+
+qemu-screen:
+	@$(QEMU) -M $(QEMU_MACHINE) -semihosting -kernel init.bin
 
 qemu-dbg:
 	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin -s -S

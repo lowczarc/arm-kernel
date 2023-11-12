@@ -16,6 +16,8 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     pages.init();
 
+    mbox.init_fb();
+
     syscalls.init();
 
     print.debug();
@@ -37,4 +39,5 @@ fn main() void {
 
     print.println(.{"Syscall debug:"});
     syscalls.dbg();
+    while (true) {}
 }
