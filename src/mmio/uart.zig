@@ -24,6 +24,9 @@ pub fn init() void {
 }
 
 pub fn write(c: u8) void {
+    if (c == '\n') {
+        write('\r');
+    }
     while ((FR.* & FR_TX_FIFO_FULL) != 0) {}
     DR.* = c;
 }

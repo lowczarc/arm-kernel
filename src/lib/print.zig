@@ -46,7 +46,7 @@ pub fn println(args: anytype) void {
     inline for (args) |arg| {
         printany(arg);
     }
-    prints("\n\r");
+    prints("\n");
 }
 
 pub fn debug() void {
@@ -69,6 +69,6 @@ pub fn debug() void {
         else => "Unknown",
     };
 
-    prints("DEBUG:\n\r");
+    prints("DEBUG:\n");
     println(.{ "\tMode: ", modeStr, "(CPSR = ", CPSR, ")" });
 }

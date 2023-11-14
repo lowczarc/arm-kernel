@@ -61,13 +61,13 @@ export fn panic_handler(code: u32, from: u32) usize {
         : [ret] "={r7}" (-> usize),
     );
 
-    print.prints("## KERNEL PANIC ##\n\r");
+    print.prints("## KERNEL PANIC ##\n");
 
     switch (code) {
-        1 => print.prints("## Cause: Undefined instruction\n\r"),
-        2 => print.prints("## Cause: Prefetch abort\n\r"),
-        3 => print.prints("## Cause: Data abort\n\r"),
-        else => print.prints("## Cause: Unknown\n\r"),
+        1 => print.prints("## Cause: Undefined instruction\n"),
+        2 => print.prints("## Cause: Prefetch abort\n"),
+        3 => print.prints("## Cause: Data abort\n"),
+        else => print.prints("## Cause: Unknown\n"),
     }
 
     print.println(.{ "## From:", from });

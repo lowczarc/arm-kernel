@@ -23,7 +23,7 @@ fn debugPage(page: *Page) void {
 const PAGE_SIZE_SHIFT = 12; // 1 << 12 == atags.ATAG.Core.?.PageSize;
 const PAGE_SIZE = 1 << PAGE_SIZE_SHIFT;
 pub fn init() void {
-    print.prints("\n\r=========================\n\r");
+    print.prints("\n=========================\n");
     var num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
     var all_pages_size = num_pages * @sizeOf(Page);
     print.println(.{ "all_pages_size: ", all_pages_size, " (Mem.Size: ", atags.ATAG.Mem.?.Size, ")" });
@@ -48,7 +48,7 @@ pub fn init() void {
     }
     print.println(.{ "kernel_pages: ", kernel_pages });
     print.println(.{ "free_pages: ", @intFromPtr(free_pages) });
-    print.prints("=========================\n\r\n\r");
+    print.prints("=========================\n\n");
 }
 
 const PageMallocHeader = struct {

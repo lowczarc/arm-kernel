@@ -31,7 +31,7 @@ qemu:
 	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin
 
 qemu-screen:
-	@$(QEMU) -M $(QEMU_MACHINE) -semihosting -kernel init.bin
+	@$(QEMU) -M $(QEMU_MACHINE) -serial /dev/stdout -semihosting -kernel init.bin
 
 qemu-dbg:
 	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin -s -S
