@@ -1,0 +1,57 @@
+===============================================================================
+LancelOS arm-kernel
+===============================================================================
+
+Description:
+-------------------------------------------------------------------------------
+The goal is to write a simple ARM kernel for Raspberry (only Pi 2 for now but
+it won't be too hard to port) in Zig.
+I want to understand how my computer work and I like learning by doing.
+This is not and will never be intended for any kind of production environment.
+
+Features:
+-------------------------------------------------------------------------------
+[x] Boot and ATAGS parsing
+[x] Logs to UART
+[x] Switching between user mode & supervisor mode + basic syscalls
+[x] Memory initialization, page allocation & simple malloc in supervisor mode
+[ ] MMU, Page table translation & kernel memory protection
+[ ] malloc in user mode
+[x] Framebuffer initialization
+[ ] Logs to Frambuffer
+[ ] "device file" model & piping
+[ ] Processes & Context switching
+[ ] File system
+
+Usage:
+-------------------------------------------------------------------------------
+You need to have the bare-metal ARM cross-assembly/link tools install
+On Archlinux it's extra/arm-none-eabi-binutils
+
+As well as the zig compiler and qemu if you want to test it on your machine.
+
+You can build the kernel with:
+	make
+
+This will build the kernel to an ./init.bin file
+
+To launch it in qemu:
+	make qemu-screen
+
+License:
+-------------------------------------------------------------------------------
+This project is licensed under the "I never put a serious license in my
+side-projects' README and I'm not going to start today" license
+
+Resources:
+-------------------------------------------------------------------------------
+https://wiki.osdev.org
+
+https://jsandler18.github.io/extra/prop-channel.html
+
+https://developer.arm.com/documentation/ddi0595/2021-12/AArch32-Registers
+
+@AsahiLina's explanation of CVE-2022-32947 is a very entertaining way to
+understand page tables https://www.youtube.com/watch?v=hDek2cp0dmI
+
+BROADCOM BCM2837 ARM Peripherals datasheet
