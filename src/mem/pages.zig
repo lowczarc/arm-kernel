@@ -1,15 +1,15 @@
 const print = @import("../lib/print.zig");
 const atags = @import("../mmio/atags.zig");
 
-const Page = struct {
+pub const Page = struct {
     addr: usize,
     allocated: bool,
     kernel: bool,
     next: ?*Page,
 };
 
-var all_pages: [*]Page = undefined;
-var free_pages: ?*Page = null;
+pub var all_pages: [*]Page = undefined;
+pub var free_pages: ?*Page = null;
 
 extern const __end: *usize;
 
@@ -21,7 +21,7 @@ fn debugPage(page: *Page) void {
 }
 
 const PAGE_SIZE_SHIFT = 12; // 1 << 12 == atags.ATAG.Core.?.PageSize;
-const PAGE_SIZE = 1 << PAGE_SIZE_SHIFT;
+pub const PAGE_SIZE = 1 << PAGE_SIZE_SHIFT;
 pub fn init() void {
     print.prints("\n=========================\n");
     var num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
@@ -104,7 +104,7 @@ pub fn kmalloc_in_page(page: *Page, size: usize) ?*u8 {
     }
 
     if ((@intFromPtr(header) + @sizeOf(PageMallocHeader) + aligned_size) > (page.addr + PAGE_SIZE)) {
-         return null;
+        return null;
     }
 
     header.is_free = false;

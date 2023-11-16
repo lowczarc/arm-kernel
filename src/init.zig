@@ -5,6 +5,7 @@ const print = @import("./lib/print.zig");
 const fb = @import("./mmio/fb.zig");
 const atags = @import("./mmio/atags.zig");
 const pages = @import("./mem/pages.zig");
+const mmu = @import("./mem/mmu.zig");
 
 export fn __aeabi_memset(s: [*]u8, c: u8, n: usize) [*]u8 {
     for (0..n) |i| {
@@ -30,6 +31,8 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     pages.init();
 
+    mmu.init();
+
     fb.init();
 
     syscalls.init();
@@ -53,5 +56,4 @@ fn main() void {
 
     print.println(.{"Syscall debug:"});
     syscalls.dbg();
-    while (true) {}
 }
