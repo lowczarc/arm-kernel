@@ -36,20 +36,14 @@ var FRAME: Frame = undefined;
 
 pub fn init() void {
     var p: u28 = @intCast(@intFromPtr(&INIT_FB_MSG) >> 4);
-    print.println(.{ "p: ", p });
     mbox.write(p, 8);
 
     var response = mbox.read(8);
 
-    print.println(.{ "response init_fb: ", response, ", ", INIT_FB_MSG[1] });
-
     p = @intCast(@intFromPtr(&REQUEST_DB_MSG) >> 4);
-    print.println(.{ "p: ", p });
     mbox.write(p, 8);
 
     response = mbox.read(8);
-
-    print.println(.{ "response init_fb: ", response, ", ", REQUEST_DB_MSG[6] });
 
     FRAME = Frame{
         .height = HEIGHT,

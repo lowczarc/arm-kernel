@@ -1,3 +1,4 @@
+const syscalls = @import("../syscalls/syscalls.zig");
 const print = @import("../lib/print.zig");
 
 comptime {
@@ -71,6 +72,6 @@ export fn panic_handler(code: u32, from: u32) usize {
     }
 
     print.println(.{ "## From:", from });
-    while (true) {}
+    syscalls.exit();
     return 0;
 }

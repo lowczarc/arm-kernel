@@ -15,7 +15,8 @@ Features:
 [x] Logs to UART
 [x] Switching between user mode & supervisor mode + basic syscalls
 [x] Memory initialization, page allocation & simple malloc in supervisor mode
-[ ] MMU, Page table translation & kernel memory protection
+[x] MMU, Page table translation
+[ ] Memory permissions/kernel memory protection
 [ ] malloc in user mode
 [x] Framebuffer initialization
 [ ] Logs to Frambuffer

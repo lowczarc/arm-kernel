@@ -37,7 +37,6 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     syscalls.init();
 
-    print.debug();
     print.println(.{"Switching to user mode"});
     start_user_mode();
 }
@@ -51,9 +50,6 @@ export fn start_user_mode() void {
 }
 
 fn main() void {
-    print.println(.{"Debug user mode:"});
-    print.debug();
-
-    print.println(.{"Syscall debug:"});
-    syscalls.dbg();
+    var foo: *volatile u32 = @ptrFromInt(0xfffff000);
+    print.println(.{ "Reading 0xfffff000: ", foo.* });
 }
