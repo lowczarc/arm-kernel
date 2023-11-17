@@ -6,13 +6,13 @@ comptime {
         \\ .global
         \\ .type __syscall_handler, %function
         \\ __syscall_handler:
-        \\      push {r0-r12, lr}
-        \\      bl syscall_handler
-        \\      pop {r0-r12, lr}
+        \\      push {r1-r12, lr}
         \\      mrs r1, spsr
-        \\      mov r2, lr
-        \\      msr cpsr, r1
-        \\      mov pc, r2
+        \\      push {r1}
+        \\      bl syscall_handler
+        \\      pop {r1}
+        \\      msr spsr, r1
+        \\      ldm sp!, {r1-r12,pc}^
     );
 }
 
@@ -29,18 +29,19 @@ export fn syscall_handler() usize {
             : [ret] "=r" (-> usize),
         ),
         consts.SYS_EXIT => {
-            print.println(.{ "Exiting..." });
+            print.println(.{"Exiting..."});
             // This a QEMU specific signal
             asm volatile (
                 \\ svc #0x00123456
-                :: [arg1] "{r0}" (0x18),
+                :
+                : [arg1] "{r0}" (0x18),
                   [arg2] "{r1}" (0x20026),
             );
             return 0;
         },
         consts.SYS_DBG => {
             print.debug();
-            return 0;
+            return 0x42;
         },
         else => 0x32,
     };

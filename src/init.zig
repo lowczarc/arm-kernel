@@ -40,6 +40,7 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
     print.println(.{"Switching to user mode"});
     start_user_mode();
 }
+
 export fn start_user_mode() void {
     asm volatile (
         \\ cps #16

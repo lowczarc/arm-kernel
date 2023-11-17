@@ -67,7 +67,11 @@ pub fn allocate_page() *Page {
     for (0..PAGE_SIZE) |i| {
         ptr[i] = 0;
     }
+    return page;
+}
 
+pub fn allocate_page_malloc_init() *Page {
+    var page = allocate_page();
     var header: *PageMallocHeader = @ptrFromInt(page.addr);
     header.size = PAGE_SIZE - @sizeOf(PageMallocHeader);
     header.is_free = true;
