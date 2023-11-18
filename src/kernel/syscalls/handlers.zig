@@ -1,5 +1,7 @@
 const print = @import("../../lib/print.zig");
 const consts = @import("./consts.zig");
+const process = @import("../process.zig");
+const uart = @import("../../io/uart.zig");
 
 comptime {
     asm (
@@ -11,8 +13,9 @@ comptime {
         \\      push {r0}
 
         // Store the all the registers in the registers global variable
-        \\      movw r0, #:lower16:registers
-        \\      movt r0, #:upper16:registers
+        \\      movw r0, #:lower16:curr_proc
+        \\      movt r0, #:upper16:curr_proc
+        \\      ldr r0, [r0]
 
         // cpsr, the CPSR has just been stored in SPSR by the interrupt
         \\      push {r1}
@@ -21,7 +24,7 @@ comptime {
         \\      pop {r1}
 
         // r1-12
-        \\      stm r0!, {r1-r12}
+        \\      stm r0!, {r0-r12}
 
         // sp, since it's banked, we need to switch to system mode to get it
         \\      push {r1,r2}
@@ -38,40 +41,39 @@ comptime {
         \\      stm r0!, {lr}
         \\      pop {r0}
         \\      bl syscall_handler
-
-        // Load the registers back
-        \\ __load_registers:
-        \\      movw r1, #:lower16:registers
-        \\      movt r1, #:upper16:registers
-        \\      ldm r1!, {r2}
-        \\      msr spsr, r2
-        \\      ldm r1, {r1-r12, sp, pc}^
+        \\      b __load_registers
     );
 }
 
-const REGISTERS = extern struct {
-    cpsr: u32 = 0,
-    r1: u32 = 0,
-    r2: u32 = 0,
-    r3: u32 = 0,
-    r4: u32 = 0,
-    r5: u32 = 0,
-    r6: u32 = 0,
-    r7: u32 = 0,
-    r8: u32 = 0,
-    r9: u32 = 0,
-    r10: u32 = 0,
-    r11: u32 = 0,
-    r12: u32 = 0,
-    sp: u32 = 0,
-    lr: u32 = 0,
-};
-
-export var registers = REGISTERS{};
-
 pub extern fn __syscall_handler() void;
 
-export fn syscall_handler() usize {
+pub fn dbg() usize {
+    print.debug();
+    return 0x42;
+}
+
+pub fn exit() usize {
+    print.println(.{"Exiting..."});
+    // This a QEMU specific signal
+    asm volatile (
+        \\ svc #0x00123456
+        :
+        : [arg1] "{r0}" (0x18),
+          [arg2] "{r1}" (0x20026),
+    );
+    return 0;
+}
+
+pub fn write(buf: [*]const u8, size: u32) usize {
+    print.println(.{@intFromPtr(buf)});
+    for (0..size) |i| {
+        uart.write(buf[i]);
+    }
+    return size;
+}
+
+export fn syscall_handler(r0: u32) void {
+    process.curr_proc.regs.r0 = r0;
     // The syscall number has been store previously in r7
     const num = asm volatile (""
         : [ret] "={r7}" (-> usize),
@@ -81,23 +83,19 @@ export fn syscall_handler() usize {
         consts.SYS_RESTART => asm volatile ("b _Reset"
             : [ret] "=r" (-> usize),
         ),
-        consts.SYS_EXIT => {
-            print.println(.{"Exiting..."});
-            // This a QEMU specific signal
-            asm volatile (
-                \\ svc #0x00123456
-                :
-                : [arg1] "{r0}" (0x18),
-                  [arg2] "{r1}" (0x20026),
-            );
-            return 0;
-        },
-        consts.SYS_DBG => {
-            print.debug();
-            return 0x42;
-        },
+        consts.SYS_EXIT => exit(),
+        consts.SYS_DBG => dbg(),
+        consts.SYS_WRITE => write(@ptrFromInt(process.curr_proc.regs.r0), process.curr_proc.regs.r1),
         else => 0x32,
     };
 
-    return result;
+    process.curr_proc.regs.r0 = result;
+}
+
+const SWI: *u32 = @ptrFromInt(0x8);
+
+pub fn init() void {
+    const b_syscall_instr: u32 = ((@intFromPtr(&__syscall_handler) - 0x10) / 4) | 0xea000000;
+
+    SWI.* = b_syscall_instr;
 }

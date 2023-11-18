@@ -1,14 +1,5 @@
-const print = @import("../../lib/print.zig");
-const handlers = @import("./handlers.zig");
 const consts = @import("./consts.zig");
-
-const SWI: *u32 = @ptrFromInt(0x8);
-
-pub fn init() void {
-    const b_syscall_instr: u32 = ((@intFromPtr(&handlers.__syscall_handler) - 0x10) / 4) | 0xea000000;
-
-    SWI.* = b_syscall_instr;
-}
+const print = @import("../../lib/print.zig");
 
 fn syscall0(number: usize) usize {
     return asm volatile ("swi 0"
@@ -54,4 +45,9 @@ pub fn dbg() usize {
 
 pub fn exit() void {
     _ = syscall0(consts.SYS_EXIT);
+}
+
+pub fn write(buf: [*]const u8, size: u32) usize {
+    print.println(.{@intFromPtr(buf)});
+    return syscall2(consts.SYS_WRITE, @intFromPtr(buf), size);
 }
