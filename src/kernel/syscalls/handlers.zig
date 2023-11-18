@@ -1,4 +1,4 @@
-const print = @import("../lib/print.zig");
+const print = @import("../../lib/print.zig");
 const consts = @import("./consts.zig");
 
 comptime {
@@ -6,6 +6,8 @@ comptime {
         \\ .global
         \\ .type __syscall_handler, %function
         \\ __syscall_handler:
+        \\      movw sp, #:lower16:stack_top
+        \\      movt sp, #:upper16:stack_top
         \\      push {r0}
 
         // Store the all the registers in the registers global variable
@@ -34,11 +36,11 @@ comptime {
 
         // lr
         \\      stm r0!, {lr}
-
         \\      pop {r0}
         \\      bl syscall_handler
 
         // Load the registers back
+        \\ __load_registers:
         \\      movw r1, #:lower16:registers
         \\      movt r1, #:upper16:registers
         \\      ldm r1!, {r2}
@@ -62,7 +64,7 @@ const REGISTERS = extern struct {
     r11: u32 = 0,
     r12: u32 = 0,
     sp: u32 = 0,
-    lr: u32= 0,
+    lr: u32 = 0,
 };
 
 export var registers = REGISTERS{};

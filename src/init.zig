@@ -1,32 +1,18 @@
-const uart = @import("./mmio/uart.zig");
-const syscalls = @import("./syscalls/syscalls.zig");
-const exceptions = @import("./exceptions/syscalls.zig");
+const uart = @import("./io/uart.zig");
+const syscalls = @import("./kernel/syscalls/syscalls.zig");
+const panic = @import("./kernel/panic.zig");
 const print = @import("./lib/print.zig");
-const fb = @import("./mmio/fb.zig");
-const atags = @import("./mmio/atags.zig");
+const fb = @import("./io/fb.zig");
+const atags = @import("./io/atags.zig");
 const pages = @import("./mem/pages.zig");
 const mmu = @import("./mem/mmu.zig");
-
-export fn __aeabi_memset(s: [*]u8, c: u8, n: usize) [*]u8 {
-    for (0..n) |i| {
-        s[i] = c;
-    }
-    return s;
-}
-
-export fn __aeabi_memcpy(dest: [*]u8, src: [*]u8, n: usize) [*]u8 {
-    for (0..n) |i| {
-        dest[i] = src[i];
-    }
-    return dest;
-}
 
 export fn init(r0: u32, r1: u32, r2: u32) void {
     _ = r0;
     _ = r1;
 
     uart.init();
-    exceptions.init();
+    panic.init();
     atags.init(r2);
 
     pages.init();

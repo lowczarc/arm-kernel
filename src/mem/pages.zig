@@ -1,5 +1,5 @@
 const print = @import("../lib/print.zig");
-const atags = @import("../mmio/atags.zig");
+const atags = @import("../io/atags.zig");
 
 pub const Page = struct {
     addr: usize,

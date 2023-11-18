@@ -1,4 +1,4 @@
-const uart = @import("../mmio/uart.zig");
+const uart = @import("../io/uart.zig");
 
 pub fn prints(msg: [*]const u8) void {
     var i: u32 = 0;

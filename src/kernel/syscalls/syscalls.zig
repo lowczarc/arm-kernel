@@ -1,4 +1,4 @@
-const print = @import("../lib/print.zig");
+const print = @import("../../lib/print.zig");
 const handlers = @import("./handlers.zig");
 const consts = @import("./consts.zig");
 

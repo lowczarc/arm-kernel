@@ -114,7 +114,8 @@ fn set_ttbr0(r: TTBR0) void {
     const split: Split = @bitCast(r);
     return asm volatile (
         \\ MCRR p15, 0, r0, r1, c2
-        :: [arg1] "{r0}" (split.low),
+        :
+        : [arg1] "{r0}" (split.low),
           [arg2] "{r1}" (split.high),
     );
 }
@@ -122,9 +123,9 @@ fn set_ttbr0(r: TTBR0) void {
 fn set_ttbcr(r: u32) void {
     return asm volatile (
         \\ MCR p15, 0, r2, c2, c0, 2
-        :: [arg] "{r2}" (r)
+        :
+        : [arg] "{r2}" (r),
     );
-
 }
 
 fn activate_mmu() void {
@@ -152,7 +153,6 @@ pub fn init() void {
 
     set_ttbcr(0x80000000);
     set_ttbr0(TTBR0{ .BADDR = @intCast(@intFromPtr(&TTBFirstLevel)) });
-
 
     print.println(.{"Activating MMU..."});
 

@@ -14,10 +14,13 @@ startup.o: startup.s
 MCPU_ZIG = $(subst -,_,$(MCPU))
 
 init.o: src/init.zig src/*.zig src/**/*.zig
-	@zig build-obj -fno-strip src/init.zig  -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
+	@zig build-obj -fno-strip src/init.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
 
-init.elf: init.o startup.o map.ld
-	@$(LD) -T map.ld init.o startup.o -o init.elf -nostdlib -z noexecstack -no-warn-rwx-segments
+util.o: src/util.zig
+	@zig build-obj -fno-strip src/util.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name util
+
+init.elf: init.o startup.o util.o map.ld
+	@$(LD) -T map.ld init.o util.o startup.o -o init.elf -nostdlib -z noexecstack -no-warn-rwx-segments
 
 init.bin: init.elf
 	@$(OBJCOPY) -O binary init.elf init.bin
