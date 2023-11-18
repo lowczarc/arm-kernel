@@ -51,6 +51,9 @@ export fn start_user_mode() void {
 }
 
 fn main() void {
+    print.debug();
+    _ = syscalls.dbg();
+    print.debug();
     var foo: *volatile u32 = @ptrFromInt(0xfffff000);
     print.println(.{ "Reading 0xfffff000: ", foo.* });
 }

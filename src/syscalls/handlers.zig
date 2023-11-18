@@ -7,14 +7,65 @@ comptime {
         \\ .type __syscall_handler, %function
         \\ __syscall_handler:
         \\      push {r1-r12, lr}
-        \\      mrs r1, spsr
+
+        // Store the all the registers in the registers global variable
+        \\      movw r0, #:lower16:registers
+        \\      movt r0, #:upper16:registers
+
+        // cpsr, the CPSR has just been stored in SPSR by the interrupt
         \\      push {r1}
-        \\      bl syscall_handler
+        \\      mrs r1, spsr
+        \\      stm r0!, {r1}
         \\      pop {r1}
-        \\      msr spsr, r1
-        \\      ldm sp!, {r1-r12,pc}^
+
+        // r1-12
+        \\      stm r0!, {r1-r12}
+
+
+        // sp, since it's banked, we need to switch to system mode to get it
+        \\      push {r1,r2}
+        \\      mrs r1, cpsr
+        \\      mov r2, r1
+        \\      orr r1, r1, #0xf
+        \\      msr cpsr, r1
+        \\      mov r1, sp
+        \\      stm r0!, {r1}
+        \\      msr cpsr, r2
+        \\      pop {r1,r2}
+
+        // lr
+        \\      stm r0!, {lr}
+
+        \\      bl syscall_handler
+
+        // Load the registers back
+        \\      movw r1, #:lower16:registers
+        \\      movt r1, #:upper16:registers
+        \\      ldm r1!, {r2}
+        \\      msr spsr, r2
+        \\      ldm r1, {r1-r12, sp, pc}^
     );
 }
+
+const REGISTERS = extern struct {
+    cpsr: u32 = 0,
+    r1: u32 = 0,
+    r2: u32 = 0,
+    r3: u32 = 0,
+    r4: u32 = 0,
+    r5: u32 = 0,
+    r6: u32 = 0,
+    r7: u32 = 0,
+    r8: u32 = 0,
+    r9: u32 = 0,
+    r10: u32 = 0,
+    r11: u32 = 0,
+    r12: u32 = 0,
+    sp: u32 = 0,
+    lr: u32= 0,
+};
+
+export var registers = REGISTERS{};
 
 pub extern fn __syscall_handler() void;
 
