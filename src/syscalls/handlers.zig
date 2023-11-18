@@ -6,7 +6,7 @@ comptime {
         \\ .global
         \\ .type __syscall_handler, %function
         \\ __syscall_handler:
-        \\      push {r1-r12, lr}
+        \\      push {r0}
 
         // Store the all the registers in the registers global variable
         \\      movw r0, #:lower16:registers
@@ -20,7 +20,6 @@ comptime {
 
         // r1-12
         \\      stm r0!, {r1-r12}
-
 
         // sp, since it's banked, we need to switch to system mode to get it
         \\      push {r1,r2}
@@ -36,6 +35,7 @@ comptime {
         // lr
         \\      stm r0!, {lr}
 
+        \\      pop {r0}
         \\      bl syscall_handler
 
         // Load the registers back
