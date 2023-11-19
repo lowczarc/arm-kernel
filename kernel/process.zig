@@ -1,5 +1,4 @@
 const print = @import("../lib/print.zig");
-const syscalls = @import("./syscalls.zig");
 const pages = @import("../mem/pages.zig");
 const mmu = @import("../mem/mmu.zig");
 
@@ -46,24 +45,68 @@ const Regs = extern struct {
 const Process = extern struct {
     regs: Regs = Regs{},
     stack_page: ?*pages.Page = null,
+    TTB_l2: [*]mmu.TTBNode = undefined,
 };
-
-var tutu = Process{};
 
 pub export var curr_proc: *Process = undefined;
 
-pub fn start_user_mode(main: u32) void {
-    syscalls.init();
+fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
+    if ((@typeInfo(@TypeOf(prog)) == .Array) and (@typeInfo(@TypeOf(prog)).Array.child == u8)) {
+        for (0..(prog.len + pages.PAGE_SIZE - 1) / pages.PAGE_SIZE) |page_nb| {
+            var current_page: [*]u8 = @ptrFromInt(pages.allocate_page().addr);
 
-    curr_proc = @alignCast(@ptrCast(pages.kmalloc(@sizeOf(Process))));
-    curr_proc.stack_page = pages.allocate_page();
-    curr_proc.regs.lr = main;
-    mmu.register_addr(@intCast(curr_proc.stack_page.?.addr >> 12), 0x7ffff, 1);
-    curr_proc.regs.sp = 0x7ffffffc;
+            for (0..pages.PAGE_SIZE) |b| {
+                if (prog.len < page_nb * pages.PAGE_SIZE + b) {
+                    break;
+                }
 
-    curr_proc.regs.cpsr = asm volatile ("mrs r1, cpsr"
+                current_page[b] = prog[page_nb * pages.PAGE_SIZE + b];
+            }
+
+            mmu.mmap_TTB_l2(
+                proc.TTB_l2,
+                @intCast(@intFromPtr(current_page) >> 12),
+                @intCast(page_nb),
+                mmu.MMAP_OPTS{ .xn = false, .ap = 1 }
+            );
+        }
+    } else {
+        @compileError("Expected []u8 in prog argument in copy_process_prog_memory");
+    }
+}
+
+fn new_process(prog: anytype) *Process {
+    var proc: *Process = @alignCast(@ptrCast(pages.kmalloc(@sizeOf(Process))));
+
+    proc.regs.lr = 0x40000000;
+    proc.TTB_l2 = mmu.allocate_TTB_l2();
+
+    copy_process_prog_memory(proc, prog);
+
+    proc.stack_page = pages.allocate_page();
+    mmu.mmap_TTB_l2(
+        proc.TTB_l2,
+        @intCast(proc.stack_page.?.addr >> 12), 0x3ffff,
+        mmu.MMAP_OPTS{ .ap = 1, .xn = false
+    });
+
+    proc.regs.sp = 0x7ffffffc;
+
+    proc.regs.cpsr = asm volatile ("mrs r1, cpsr"
         : [ret] "={r1}" (-> u32),
     ) & 0xfffffff0;
 
+    return proc;
+}
+
+fn context_switch(proc: *Process) noreturn {
+    curr_proc = proc;
+    mmu.register_l2(proc.TTB_l2, 1);
+
     asm volatile ("b __load_registers");
+    unreachable;
+}
+
+pub fn start_user_mode(prog: anytype) noreturn {
+    context_switch(new_process(prog));
 }

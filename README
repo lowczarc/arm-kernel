@@ -21,7 +21,8 @@ Features:
 [x] Framebuffer initialization
 [ ] Logs to Frambuffer
 [ ] "device file" model & piping
-[ ] Processes & Context switching
+[x] Processes & Context switching
+[ ] Launch multiple processes
 [ ] Keyboard support
 [ ] File system
 

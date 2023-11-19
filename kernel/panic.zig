@@ -57,12 +57,7 @@ pub extern fn __prefetch_abort_handler() void;
 pub extern fn __data_abort_handler() void;
 
 export fn panic_handler(code: u32, from: u32) usize {
-    // The panic number has been store previously in r7
-    _ = asm volatile (""
-        : [ret] "={r7}" (-> usize),
-    );
-
-    print.prints("## KERNEL PANIC ##\n");
+    print.println(.{"## KERNEL PANIC ##"});
 
     switch (code) {
         1 => print.prints("## Cause: Undefined instruction\n"),

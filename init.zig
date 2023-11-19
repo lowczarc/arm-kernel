@@ -1,6 +1,7 @@
 const uart = @import("./io/uart.zig");
 const process = @import("./kernel/process.zig");
 const panic = @import("./kernel/panic.zig");
+const syscalls = @import("./kernel/syscalls.zig");
 const print = @import("./lib/print.zig");
 const fb = @import("./io/fb.zig");
 const atags = @import("./io/atags.zig");
@@ -21,13 +22,9 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     fb.init();
 
-    var file = @embedFile("./userspace/main.bin").*;
-    var userspace_main: [*]u8 = @ptrFromInt(pages.allocate_page().addr);
+    syscalls.init();
 
-    @memcpy(userspace_main, &file);
+    print.println(.{ "Switching to user mode: ", 0x40000000 });
 
-    mmu.register_addr(@intCast(@intFromPtr(userspace_main) >> 12), 0x80000, 1);
-
-    print.println(.{"Switching to user mode: ", 0x80000000});
-    process.start_user_mode(0x80000000);
+    process.start_user_mode(@embedFile("./userspace/main.bin").*);
 }

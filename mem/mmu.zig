@@ -4,7 +4,7 @@ const pages = @import("./pages.zig");
 // PL0 = User mode
 // Pl1 = Other modes (Supervisor)
 
-const TTBNode = packed struct {
+pub const TTBNode = packed struct {
     // Should be 0b11 for 4KB pages, 0bx0 to ignore
     active: u2 = 0b00,
 
@@ -62,7 +62,15 @@ const TTBLeaf = packed struct {
 
     _should_be_zero_1: u12,
 
-    upper_page_attr: u12,
+    contiguous_hint: bool,
+
+    pxn: bool,
+
+    xn: bool,
+
+    _reserved_for_software_use: u4,
+
+    _ignored: u5,
 };
 
 const VAddr = packed struct {
@@ -71,32 +79,48 @@ const VAddr = packed struct {
     first: u2,
 };
 
-var TTBFirstLevel align(4096) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
+var TTB_L1 align(4096) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
 
-pub fn register_addr(ph_addr: u20, addr: u20, ap: u2) void {
-    var vaddr: VAddr = @bitCast(addr);
+pub fn allocate_TTB_l2() [*]TTBNode {
+    var TTB_node: [*]TTBNode = @ptrFromInt(pages.allocate_page().addr);
 
-    if (TTBFirstLevel[vaddr.first].active != 0b11) {
-        var allocated_page = pages.allocate_page().addr;
-        var second_level_page: u28 = @intCast(allocated_page >> 4);
-        TTBFirstLevel[vaddr.first].next_level_table_address = @intCast(second_level_page >> 8);
-        TTBFirstLevel[vaddr.first].active = 0b11;
+    return TTB_node;
+}
+
+const VAddrLvl2 = packed struct {
+    part3: u9,
+    part2: u9
+};
+
+pub const MMAP_OPTS = struct {
+    // By default only accessible to kernel
+    ap: u2 = 0,
+
+    // By default non executable
+    xn: bool = true,
+};
+
+pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: u20, addr: u18, opts: MMAP_OPTS) void {
+    var vaddr: VAddrLvl2 = @bitCast(addr);
+
+    if (l2[vaddr.part2].active != 0b11) {
+        var third_level_page: u20 = @intCast(pages.allocate_page().addr >> 12);
+        l2[vaddr.part2].next_level_table_address = third_level_page;
+        l2[vaddr.part2].active = 0b11;
     }
 
-    var TTBSecondLevel: [*]TTBNode = @ptrFromInt(@as(u32, TTBFirstLevel[vaddr.first].next_level_table_address) << 12);
+    var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
 
-    if (TTBSecondLevel[vaddr.second].active != 0b11) {
-        var third_level_page: u28 = @intCast(pages.allocate_page().addr >> 4);
-        TTBSecondLevel[vaddr.second].next_level_table_address = @intCast(third_level_page >> 8);
-        TTBSecondLevel[vaddr.second].active = 0b11;
-    }
+    l3[vaddr.part3].output_address = ph_addr;
+    l3[vaddr.part3].af = true;
+    l3[vaddr.part3].ap = opts.ap;
+    l3[vaddr.part3].xn = opts.xn;
+    l3[vaddr.part3].active = 0b11;
+}
 
-    var TTBThirdLevel: [*]TTBLeaf = @ptrFromInt(@as(u32, TTBSecondLevel[vaddr.second].next_level_table_address) << 12);
-
-    TTBThirdLevel[vaddr.third].output_address = ph_addr;
-    TTBThirdLevel[vaddr.third].af = true;
-    TTBThirdLevel[vaddr.third].ap = ap;
-    TTBThirdLevel[vaddr.third].active = 0b11;
+pub fn register_l2(l2: [*]TTBNode, l1_range: u2) void {
+    TTB_L1[l1_range].next_level_table_address = @intCast(@intFromPtr(l2) >> 12);
+    TTB_L1[l1_range].active = 0b11;
 }
 
 const TTBR0 = packed struct {
@@ -137,12 +161,15 @@ fn activate_mmu() void {
 }
 
 pub fn init() void {
+    var kernel_TTB_l2 = allocate_TTB_l2();
     for (0x00000..0x40000) |i| {
-        register_addr(@intCast(i), @intCast(i), 0);
+        mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{ .xn= false });
     }
 
+    register_l2(kernel_TTB_l2, 0);
+
     set_ttbcr(0x80000000);
-    set_ttbr0(TTBR0{ .BADDR = @intCast(@intFromPtr(&TTBFirstLevel)) });
+    set_ttbr0(TTBR0{ .BADDR = @intCast(@intFromPtr(&TTB_L1)) });
 
     print.println(.{"Activating MMU..."});
 
