@@ -16,7 +16,7 @@ MCPU_ZIG = $(subst -,_,$(MCPU))
 userspace/main.bin:
 	@cd userspace && make main.bin
 
-assets/font.bin:
+assets/font.bin: assets/font.txt
 	@python scripts/compile_font.py assets/font.txt assets/font.bin
 
 init.o: init.zig *.zig **/*.zig userspace/main.bin assets/font.bin
