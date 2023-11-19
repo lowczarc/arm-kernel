@@ -1,5 +1,5 @@
 const print = @import("../lib/print.zig");
-const syscalls = @import("./syscalls/handlers.zig");
+const syscalls = @import("./syscalls.zig");
 const pages = @import("../mem/pages.zig");
 const mmu = @import("../mem/mmu.zig");
 

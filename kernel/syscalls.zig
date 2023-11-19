@@ -1,7 +1,11 @@
-const print = @import("../../lib/print.zig");
-const consts = @import("./consts.zig");
-const process = @import("../process.zig");
-const uart = @import("../../io/uart.zig");
+const print = @import("../lib/print.zig");
+const process = @import("./process.zig");
+const uart = @import("../io/uart.zig");
+
+const SYS_RESTART = 0;
+const SYS_EXIT = 1;
+const SYS_WRITE = 4;
+const SYS_DBG = 7;
 
 comptime {
     asm (
@@ -79,12 +83,12 @@ export fn syscall_handler(r0: u32) void {
     );
 
     const result = switch (num) {
-        consts.SYS_RESTART => asm volatile ("b _Reset"
+        SYS_RESTART => asm volatile ("b _Reset"
             : [ret] "=r" (-> usize),
         ),
-        consts.SYS_EXIT => exit(),
-        consts.SYS_DBG => dbg(),
-        consts.SYS_WRITE => write(@ptrFromInt(process.curr_proc.regs.r0), process.curr_proc.regs.r1),
+        SYS_EXIT => exit(),
+        SYS_DBG => dbg(),
+        SYS_WRITE => write(@ptrFromInt(process.curr_proc.regs.r0), process.curr_proc.regs.r1),
         else => 0x32,
     };
 

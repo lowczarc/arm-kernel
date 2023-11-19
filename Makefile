@@ -13,11 +13,14 @@ startup.o: startup.s
 
 MCPU_ZIG = $(subst -,_,$(MCPU))
 
-init.o: src/init.zig src/*.zig src/**/*.zig src/main.bin
-	@zig build-obj -fno-strip src/init.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
+userspace/main.bin:
+	@cd userspace && make main.bin
 
-util.o: src/util.zig
-	@zig build-obj -fno-strip src/util.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name util
+init.o: init.zig *.zig **/*.zig userspace/main.bin
+	@zig build-obj -fno-strip init.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
+
+util.o: util.zig
+	@zig build-obj -fno-strip util.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name util
 
 init.elf: init.o startup.o util.o map.ld
 	@$(LD) -T map.ld init.o util.o startup.o -o init.elf -nostdlib -z noexecstack -no-warn-rwx-segments
@@ -29,6 +32,7 @@ init.bin: init.elf
 
 clean:
 	@rm -f *.o *.elf *.bin
+	@cd userspace && make clean
 
 qemu:
 	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin

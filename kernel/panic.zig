@@ -1,4 +1,4 @@
-const syscalls = @import("./syscalls/handlers.zig");
+const syscalls = @import("./syscalls.zig");
 const print = @import("../lib/print.zig");
 
 comptime {

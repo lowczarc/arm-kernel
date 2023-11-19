@@ -21,7 +21,7 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     fb.init();
 
-    var file align(32) = @embedFile("./main.bin").*;
+    var file = @embedFile("./userspace/main.bin").*;
     var userspace_main: [*]u8 = @ptrFromInt(pages.allocate_page().addr);
 
     @memcpy(userspace_main, &file);

@@ -1,7 +1,7 @@
-pub const SYS_RESTART = 0;
-pub const SYS_EXIT = 1;
-pub const SYS_WRITE = 4;
-pub const SYS_DBG = 7;
+const SYS_RESTART = 0;
+const SYS_EXIT = 1;
+const SYS_WRITE = 4;
+const SYS_DBG = 7;
 
 fn syscall0(number: usize) usize {
     return asm volatile ("swi 0"
