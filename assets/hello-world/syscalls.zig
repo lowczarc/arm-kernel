@@ -1,4 +1,7 @@
-const consts = @import("./consts.zig");
+pub const SYS_RESTART = 0;
+pub const SYS_EXIT = 1;
+pub const SYS_WRITE = 4;
+pub const SYS_DBG = 7;
 
 fn syscall0(number: usize) usize {
     return asm volatile ("swi 0"
@@ -35,17 +38,17 @@ fn syscall3(number: usize, arg1: usize, arg2: usize, arg3: usize) usize {
 }
 
 pub fn restart_syscall() void {
-    _ = syscall0(consts.SYS_RESTART);
+    _ = syscall0(SYS_RESTART);
 }
 
 pub fn dbg() usize {
-    return syscall0(consts.SYS_DBG);
+    return syscall0(SYS_DBG);
 }
 
 pub fn exit() void {
-    _ = syscall0(consts.SYS_EXIT);
+    _ = syscall0(SYS_EXIT);
 }
 
 pub fn write(buf: [*]const u8, size: u32) usize {
-    return syscall2(consts.SYS_WRITE, @intFromPtr(buf), size);
+    return syscall2(SYS_WRITE, @intFromPtr(buf), size);
 }

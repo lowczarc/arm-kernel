@@ -73,7 +73,7 @@ const VAddr = packed struct {
 
 var TTBFirstLevel align(4096) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
 
-pub fn register_addr(ph_addr: u20, addr: u20) void {
+pub fn register_addr(ph_addr: u20, addr: u20, ap: u2) void {
     var vaddr: VAddr = @bitCast(addr);
 
     if (TTBFirstLevel[vaddr.first].active != 0b11) {
@@ -95,7 +95,7 @@ pub fn register_addr(ph_addr: u20, addr: u20) void {
 
     TTBThirdLevel[vaddr.third].output_address = ph_addr;
     TTBThirdLevel[vaddr.third].af = true;
-    TTBThirdLevel[vaddr.third].ap = 1;
+    TTBThirdLevel[vaddr.third].ap = ap;
     TTBThirdLevel[vaddr.third].active = 0b11;
 }
 
@@ -138,18 +138,8 @@ fn activate_mmu() void {
 
 pub fn init() void {
     for (0x00000..0x40000) |i| {
-        register_addr(@intCast(i), @intCast(i));
+        register_addr(@intCast(i), @intCast(i), 0);
     }
-
-    var test_page = pages.allocate_page();
-
-    var bar: *volatile u32 = @ptrFromInt(test_page.addr);
-
-    print.println(.{ "Writing 0x42 in *", @intFromPtr(bar) });
-    bar.* = 0x42;
-
-    print.println(.{ "Registering vaddr 0xfffff000 to ", @intFromPtr(bar) });
-    register_addr(@intCast(test_page.addr >> 12), 0xfffff);
 
     set_ttbcr(0x80000000);
     set_ttbr0(TTBR0{ .BADDR = @intCast(@intFromPtr(&TTBFirstLevel)) });
@@ -159,7 +149,4 @@ pub fn init() void {
     activate_mmu();
 
     print.println(.{"MMU activated"});
-
-    var foo: *volatile u32 = @ptrFromInt(0xfffff000);
-    print.println(.{ "Reading 0xfffff000: ", foo.* });
 }

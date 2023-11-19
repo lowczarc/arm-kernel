@@ -23,9 +23,6 @@ comptime {
         \\      stm r0!, {r1}
         \\      pop {r1}
 
-        // r1-12
-        \\      stm r0!, {r0-r12}
-
         // sp, since it's banked, we need to switch to system mode to get it
         \\      push {r1,r2}
         \\      mrs r1, cpsr
@@ -36,6 +33,9 @@ comptime {
         \\      stm r0!, {r1}
         \\      msr cpsr, r2
         \\      pop {r1,r2}
+
+        // r1-12
+        \\      stm r0!, {r0-r12}
 
         // lr
         \\      stm r0!, {lr}
@@ -65,7 +65,6 @@ pub fn exit() usize {
 }
 
 pub fn write(buf: [*]const u8, size: u32) usize {
-    print.println(.{@intFromPtr(buf)});
     for (0..size) |i| {
         uart.write(buf[i]);
     }

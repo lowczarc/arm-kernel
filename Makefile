@@ -13,7 +13,7 @@ startup.o: startup.s
 
 MCPU_ZIG = $(subst -,_,$(MCPU))
 
-init.o: src/init.zig src/*.zig src/**/*.zig
+init.o: src/init.zig src/*.zig src/**/*.zig src/main.bin
 	@zig build-obj -fno-strip src/init.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
 
 util.o: src/util.zig

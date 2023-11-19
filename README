@@ -16,7 +16,7 @@ Features:
 [x] Switching between user mode & supervisor mode + basic syscalls
 [x] Memory initialization, page allocation & simple malloc in supervisor mode
 [x] MMU Initialization, Page table translation, Memory permissions
-[ ] Kernel/Userspace memory separation
+[x] Kernel/Userspace memory separation
 [ ] malloc in user mode
 [x] Framebuffer initialization
 [ ] Logs to Frambuffer

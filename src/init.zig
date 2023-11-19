@@ -1,5 +1,5 @@
 const uart = @import("./io/uart.zig");
-const syscalls = @import("./kernel/syscalls/syscalls.zig");
+const process = @import("./kernel/process.zig");
 const panic = @import("./kernel/panic.zig");
 const print = @import("./lib/print.zig");
 const fb = @import("./io/fb.zig");
@@ -21,25 +21,13 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
 
     fb.init();
 
-    syscalls.init();
+    var file align(32) = @embedFile("./main.bin").*;
+    var userspace_main: [*]u8 = @ptrFromInt(pages.allocate_page().addr);
 
-    print.println(.{"Switching to user mode"});
-    start_user_mode();
-}
+    @memcpy(userspace_main, &file);
 
-export fn start_user_mode() void {
-    asm volatile (
-        \\ cps #16
-    );
-    main();
-    print.println(.{"User mode returned"});
-    syscalls.exit();
-}
+    mmu.register_addr(@intCast(@intFromPtr(userspace_main) >> 12), 0x80000, 1);
 
-fn main() void {
-    print.debug();
-    _ = syscalls.dbg();
-    print.debug();
-    var foo: *volatile u32 = @ptrFromInt(0xfffff000);
-    print.println(.{ "Reading 0xfffff000: ", foo.* });
+    print.println(.{"Switching to user mode: ", 0x80000000});
+    process.start_user_mode(0x80000000);
 }

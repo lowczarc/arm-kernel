@@ -1,6 +1,7 @@
 const print = @import("../lib/print.zig");
 const syscalls = @import("./syscalls/handlers.zig");
 const pages = @import("../mem/pages.zig");
+const mmu = @import("../mem/mmu.zig");
 
 comptime {
     asm (
@@ -11,12 +12,21 @@ comptime {
         \\      ldr r1, [r1]
         \\      ldm r1!, {r2}
         \\      msr spsr, r2
-        \\      ldm r1, {r0-r12, sp, pc}^
+
+        // We need to switch to system mode to set the sp
+        \\      mrs r3, cpsr
+        \\      mov r2, r3
+        \\      orr r3, r3, #0xf
+        \\      msr cpsr, r3
+        \\      ldm r1!, {sp}
+        \\      msr cpsr, r2
+        \\      ldm r1, {r0-r12, pc}^
     );
 }
 
 const Regs = extern struct {
     cpsr: u32 = 0,
+    sp: u32 = 0,
     r0: u32 = 0,
     r1: u32 = 0,
     r2: u32 = 0,
@@ -30,7 +40,6 @@ const Regs = extern struct {
     r10: u32 = 0,
     r11: u32 = 0,
     r12: u32 = 0,
-    sp: u32 = 0,
     lr: u32 = 0,
 };
 
@@ -49,7 +58,8 @@ pub fn start_user_mode(main: u32) void {
     curr_proc = @alignCast(@ptrCast(pages.kmalloc(@sizeOf(Process))));
     curr_proc.stack_page = pages.allocate_page();
     curr_proc.regs.lr = main;
-    curr_proc.regs.sp = @intFromPtr(curr_proc.stack_page) + pages.PAGE_SIZE;
+    mmu.register_addr(@intCast(curr_proc.stack_page.?.addr >> 12), 0x7ffff, 1);
+    curr_proc.regs.sp = 0x7ffffffc;
 
     curr_proc.regs.cpsr = asm volatile ("mrs r1, cpsr"
         : [ret] "={r1}" (-> u32),

@@ -116,15 +116,19 @@ pub fn kmalloc_in_page(page: *Page, size: usize) ?*u8 {
     return @ptrFromInt(@intFromPtr(header) + @sizeOf(PageMallocHeader));
 }
 
+fn same_page(a: *PageMallocHeader, b: *PageMallocHeader) bool {
+    return (@intFromPtr(a) / PAGE_SIZE) == (@intFromPtr(b) / PAGE_SIZE);
+}
+
 pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
     var header: *PageMallocHeader = @ptrFromInt(@intFromPtr(ptr) - @sizeOf(PageMallocHeader));
     header.is_free = true;
-    if (header.next != null and header.next.?.is_free) {
+    if (header.next != null and header.next.?.is_free and same_page(header, header.next)) {
         var next_header = header.next.?;
         header.next = next_header.next;
         header.size = header.size + @sizeOf(PageMallocHeader) + next_header.size;
     }
-    if (header.prev != null and header.prev.?.is_free) {
+    if (header.prev != null and header.prev.?.is_free and same_page(header, header.prev)) {
         var prev_header = header.prev.?;
         prev_header.next = header.next;
         prev_header.size = prev_header.size + @sizeOf(PageMallocHeader) + header.size;
@@ -132,6 +136,45 @@ pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
     }
 
     return header;
+}
+
+var kheap: ?*PageMallocHeader = null;
+
+pub fn kmalloc(size: usize) *u8 {
+    if (kheap == null) {
+        kheap = @ptrFromInt(allocate_page_malloc_init().addr);
+    }
+
+    var p: ?*u8 = null;
+    while (p == null) {
+        p = kmalloc_in_page(@ptrCast(kheap), size);
+        if (p == null) {
+            var new_kheap: *PageMallocHeader = @ptrCast(allocate_page_malloc_init());
+            new_kheap.next = kheap;
+            kheap.?.prev = new_kheap;
+            kheap = new_kheap;
+        }
+    }
+
+    return p.?;
+}
+
+pub fn kfree(ptr: *u8) void {
+    var header = kfree_in_page(ptr);
+
+    if (@intFromPtr(header) % PAGE_SIZE == 0 and header.is_free == true and header.size + @sizeOf(PageMallocHeader) == PAGE_SIZE) {
+        if (header.prev) {
+            header.prev.next = header.next;
+        }
+
+        if (header.next) {
+            header.next.prev = header.prev;
+        }
+
+        var page_nb = @intFromPtr(header) >> PAGE_SIZE_SHIFT;
+
+        free_page(all_pages[page_nb]);
+    }
 }
 
 pub fn kdbg_alloc(ptr: *u8) void {
