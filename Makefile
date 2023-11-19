@@ -16,7 +16,10 @@ MCPU_ZIG = $(subst -,_,$(MCPU))
 userspace/main.bin:
 	@cd userspace && make main.bin
 
-init.o: init.zig *.zig **/*.zig userspace/main.bin
+assets/font.bin:
+	@python scripts/compile_font.py assets/font.txt assets/font.bin
+
+init.o: init.zig *.zig **/*.zig userspace/main.bin assets/font.bin
 	@zig build-obj -fno-strip init.zig -target $(ZIG_TARGET) -mcpu=$(MCPU_ZIG) --name init
 
 util.o: util.zig
@@ -31,7 +34,7 @@ init.bin: init.elf
 .PHONY: clean qemu
 
 clean:
-	@rm -f *.o *.elf *.bin
+	@rm -f *.o *.elf *.bin assets/font.bin
 	@cd userspace && make clean
 
 qemu:

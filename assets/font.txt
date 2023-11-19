@@ -1,0 +1,90 @@
+0:
+        
+  XXXX  
+ XX XXX 
+ XX XXX 
+ XX XXX 
+ XX XXX 
+  XXXX  
+        
+1:
+        
+   XX   
+  XXX   
+   XX   
+   XX   
+   XX   
+  XXXX  
+        
+2:
+        
+  XXXX  
+ X  XXX 
+    XXX 
+  XXXX  
+ XXX    
+ XXXXXX 
+        
+3:
+        
+ XXXXX  
+    XXX 
+  XXXX  
+    XXX 
+    XXX 
+ XXXXX  
+        
+4:
+        
+  XXXX  
+ XX XX  
+ X  XX  
+ X  XXX 
+ XXXXXX 
+    XX  
+        
+5:
+        
+ XXXXX  
+ XX     
+ XXXXX  
+    XXX 
+ X  XXX 
+  XXXX  
+        
+6:
+        
+  XXXX  
+ XX     
+ XXXXX  
+ XX  XX 
+ XX  XX 
+  XXXX  
+        
+7:
+        
+ XXXXXX 
+     XX 
+    XX  
+   XX   
+  XXX   
+  XXX   
+        
+8:
+        
+  XXXX  
+ X  XXX 
+  XXXX  
+ X  XXX 
+ X  XXX 
+  XXXX  
+        
+9:
+        
+  XXXX  
+ X  XXX 
+ X  XXX 
+  XXXXX 
+    XXX 
+  XXXX  
+        

@@ -1,4 +1,3 @@
 *.o
-init.bin
-main.bin
+*.bin
 *.elf
