@@ -45,11 +45,7 @@ pub fn init() void {
 
     response = mbox.read(8);
 
-    FRAME = Frame{
-        .height = HEIGHT,
-        .width = WIDTH,
-        .buffer = @ptrFromInt(REQUEST_DB_MSG[5])
-    };
+    FRAME = Frame{ .height = HEIGHT, .width = WIDTH, .buffer = @ptrFromInt(REQUEST_DB_MSG[5]) };
 
     for (0..(FRAME.width * FRAME.height)) |i| {
         FRAME.buffer[i].red = 0x10;
@@ -57,18 +53,18 @@ pub fn init() void {
         FRAME.buffer[i].blue = 0x10;
     }
 
-    print_glyph([8]u8{0x0,0x18,0x38,0x18,0x18,0x18,0x3c,0x0}, 0, 0);
-    print_glyph([8]u8{0x0,0x3c,0x4e,0xe,0x3c,0x70,0x7e,0x0}, 8, 0);
-    print_glyph([8]u8{0x0,0x7c,0xe,0x3c,0xe,0xe,0x7c,0x0}, 16, 0);
+    print_glyph([8]u8{ 0x0, 0x18, 0x38, 0x18, 0x18, 0x18, 0x3c, 0x0 }, 0, 0);
+    print_glyph([8]u8{ 0x0, 0x3c, 0x4e, 0xe, 0x3c, 0x70, 0x7e, 0x0 }, 8, 0);
+    print_glyph([8]u8{ 0x0, 0x7c, 0xe, 0x3c, 0xe, 0xe, 0x7c, 0x0 }, 16, 0);
 }
 
 pub fn print_glyph(glyph: [8]u8, x: u16, y: u16) void {
     for (0..8) |i| {
         for (0..8) |j| {
             if ((glyph[i] >> @intCast(j)) & 1 != 0) {
-                FRAME.buffer[(y+i)*WIDTH+x+7-j].red = 0xff;
-                FRAME.buffer[(y+i)*WIDTH+x+7-j].green = 0xff;
-                FRAME.buffer[(y+i)*WIDTH+x+7-j].blue = 0xff;
+                FRAME.buffer[(y + i) * WIDTH + x + 7 - j].red = 0xff;
+                FRAME.buffer[(y + i) * WIDTH + x + 7 - j].green = 0xff;
+                FRAME.buffer[(y + i) * WIDTH + x + 7 - j].blue = 0xff;
             }
         }
     }

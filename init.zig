@@ -15,13 +15,9 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
     uart.init();
     panic.init();
     atags.init(r2);
-
     pages.init();
-
     mmu.init();
-
     fb.init();
-
     syscalls.init();
 
     print.println(.{ "Switching to user mode: ", 0x40000000 });

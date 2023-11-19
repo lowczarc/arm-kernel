@@ -162,8 +162,15 @@ fn activate_mmu() void {
 
 pub fn init() void {
     var kernel_TTB_l2 = allocate_TTB_l2();
-    for (0x00000..0x40000) |i| {
+
+    for (0x00000..0x3c000) |i| {
         mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{ .xn= false });
+    }
+
+    // MMIO is supposed to start at 0x3f000000 but it seems the frambuffer is
+    // allocated on 0x3cXXXXXX
+    for (0x3c000..0x40000) |i| {
+        mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{});
     }
 
     register_l2(kernel_TTB_l2, 0);
