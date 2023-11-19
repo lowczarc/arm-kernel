@@ -22,6 +22,7 @@ Features:
 [ ] Logs to Frambuffer
 [ ] "device file" model & piping
 [ ] Processes & Context switching
+[ ] Keyboard support
 [ ] File system
 
 Usage:
