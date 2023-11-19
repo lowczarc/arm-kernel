@@ -24,7 +24,7 @@ pub fn printx(x: u32) void {
 }
 
 pub fn printany(arg: anytype) void {
-    if (@typeInfo(@TypeOf(arg)) == .Int) {
+    if (@typeInfo(@TypeOf(arg)) == .Int or @TypeOf(arg) == comptime_int) {
         printx(arg);
     } else if (@typeInfo(@TypeOf(arg)) == .Bool) {
         if (arg) {
