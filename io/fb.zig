@@ -1,8 +1,8 @@
 const mbox = @import("./mbox.zig");
 const print = @import("../lib/print.zig");
 
-const HEIGHT = 480;
-const WIDTH = 640;
+const HEIGHT = 1080;
+const WIDTH = 1920;
 
 var INIT_FB_MSG: [17]u32 align(16) = [_]u32{
     68, // MSG size
@@ -53,12 +53,32 @@ pub fn init() void {
         FRAME.buffer[i].blue = 0x10;
     }
 
-    var char_list = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./:;<=>?@[\\]^_{|}~`";
+    var char_list = @embedFile("../io/fb.zig");
 
+    var lb: u32 = 0;
+    var xi: u32 = 0;
     for (0..char_list.len) |i| {
-        var x: u16 = @intCast((i * 8) % WIDTH);
-        var y: u16 = @intCast(8 * ((i * 8) / WIDTH));
-        print_char(char_list[i], x, y);
+        if (char_list[i] == '\n') {
+            lb += 1;
+            xi = 0;
+            continue;
+        }
+        if (char_list[i] == '\t') {
+            xi += (4-xi % 4) + 1;
+            continue;
+        }
+        var x: u16 = @intCast((xi * 8));
+        if (x + 8 > WIDTH) {
+            x = 0;
+            xi = 0;
+            lb += 1;
+        }
+        if ((lb + 1) * 8 > HEIGHT) {
+            return;
+        }
+        print_char(char_list[i], x, @intCast(lb*8));
+        xi += 1;
+
     }
 }
 
