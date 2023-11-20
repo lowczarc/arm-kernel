@@ -53,22 +53,19 @@ pub fn init() void {
         FRAME.buffer[i].blue = 0x10;
     }
 
-    print_char('0', 0, 0);
-    print_char('1', 1*8, 0);
-    print_char('2', 2*8, 0);
-    print_char('3', 3*8, 0);
-    print_char('4', 4*8, 0);
-    print_char('5', 5*8, 0);
-    print_char('6', 6*8, 0);
-    print_char('7', 7*8, 0);
-    print_char('8', 8*8, 0);
-    print_char('9', 9*8, 0);
+    var char_list = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!\"#$%&'()*+,-./:;<=>?@[\\]^_{|}~`";
+
+    for (0..char_list.len) |i| {
+        var x: u16 = @intCast((i * 8) % WIDTH);
+        var y: u16 = @intCast(8 * ((i * 8) / WIDTH));
+        print_char(char_list[i], x, y);
+    }
 }
 
 fn print_char(char: u8, x: u16, y: u16) void {
     var font = @embedFile("../assets/font.bin");
     var char_pos: u32 = @intCast(char);
-    var glyph = font[8*char_pos..8*(char_pos+1)];
+    var glyph = font[8 * char_pos .. 8 * (char_pos + 1)];
 
     for (0..8) |i| {
         for (0..8) |j| {

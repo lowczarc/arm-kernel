@@ -2,8 +2,8 @@
         
   XXXX  
  XX  XX 
- XX  XX 
- XX  XX 
+ XX XXX 
+ XXX XX 
  XX  XX 
   XXXX  
         
@@ -88,3 +88,759 @@
      XX 
   XXXX  
         
+A:
+
+  XXXX   
+ X   XX
+ XXXXXX
+ X   XX
+ X   XX
+ X   XX
+
+B:
+
+ XXXXX
+ X   XX
+ XXXXX 
+ X   XX
+ X   XX
+ XXXXX
+
+C:
+
+   XXXX
+ XXX
+ XX
+ XX
+ XXX
+   XXXX
+
+D:
+
+ XXXXX
+ X   XX
+ X   XX
+ X   XX
+ X   XX
+ XXXXX
+
+E:
+
+ XXXXXX
+ XX
+ XXXXX
+ XX
+ XX
+ XXXXXX
+
+F:
+
+ XXXXXX
+ XX
+ XXXXX
+ XX
+ XX
+ XX
+
+G:
+
+   XXXX
+ XXX
+ XX
+ XX  XX
+ XXX  X
+   XXXX
+
+H:
+
+ X   XX
+ X   XX
+ XXXXXX
+ X   XX
+ X   XX
+ X   XX
+
+I:
+
+  XXXX  
+   XX   
+   XX   
+   XX   
+   XX   
+  XXXX 
+
+J:
+
+   XXXX 
+    XX  
+    XX  
+    XX  
+ X  XX  
+ XXXXX 
+
+K:
+
+ X  XX
+ X XX
+ XXX
+ X XX
+ X  XX
+ X  XX
+
+L:
+
+ XX
+ XX
+ XX
+ XX
+ XX
+ XXXXXX
+
+M:
+
+ X   XX
+ XX XXX
+ XXXXXX
+ X X XX
+ X   XX
+ X   XX
+
+N:
+
+ X   XX
+ XX  XX
+ XXX XX
+ X XXXX
+ X  XXX
+ X   XX
+
+O:
+       
+  XXXX  
+ X   XX 
+ X   XX 
+ X   XX 
+ X   XX 
+  XXXX  
+  
+P:
+
+ XXXXX
+ X   XX
+ X   XX
+ XXXXX
+ X
+ X
+
+Q:
+      
+  XXXX  
+ X   XX 
+ X   XX 
+ X   XX 
+ X   XX 
+  XXXX
+      X
+R:
+
+ XXXXX
+ X   XX
+ X   XX
+ XXXXX
+ X  XX 
+ X   XX
+
+S:
+
+  XXXX
+ XX   X
+  XX 
+   XXX 
+ X   XX
+  XXXX
+
+T:
+
+ XXXXXX
+   XX
+   XX
+   XX
+   XX
+   XX
+
+U:
+
+ X   XX 
+ X   XX 
+ X   XX 
+ X   XX 
+ X   XX 
+  XXXX  
+ 
+V:
+
+ X   XX 
+ X   XX 
+ X   XX 
+ X   XX 
+  X XX 
+   XX  
+ 
+W:
+
+ X   XX
+ X   XX
+ X X XX
+ XXXXXX
+ XX XXX
+ X   XX
+
+X:
+
+ XX   XX
+  XX XX
+   XXX
+   XXX
+  XX XX
+ XX   XX
+
+Y:
+
+  X   XX
+  X   XX
+   X XX
+    XX
+    XX
+    XX
+
+Z:
+
+ XXXXXX
+    XX
+   XX
+  XX
+ XX
+ XXXXXX
+
+a:
+
+
+  XXXX
+     XX
+  XXXXX
+ X   XX
+  XXXXX
+
+b:
+
+ XX
+ XX
+ XXXXX
+ XX   X
+ XX   X
+ XXXXX
+
+c:
+
+
+  XXXX
+ XX
+ XX
+ XX
+  XXXX
+
+d:
+ 
+     XX
+     XX
+  XXXXX
+ X   XX
+ X   XX
+  XXXXX
+
+e:
+
+
+  XXXX
+ X   XX
+ XXXXXX
+ X   
+  XXXX
+
+f:
+
+   XXXX
+  XX
+ XXXXX
+  XX
+  XX
+  XX
+
+g:
+
+
+  XXXXX
+ X   XX
+ X   XX
+  XXXXX
+     XX
+  XXXX
+h:
+
+ XX
+ XX
+ XX
+ XXXXX
+ XX  XX
+ XX  XX
+
+i:
+
+   XX
+ 
+   XX
+   XX
+   XX
+   XX
+
+j:
+
+   XX
+ 
+   XX
+   XX
+   XX
+   XX
+ XXX
+k:
+
+ XX
+ XX
+ XX XX
+ XXXX
+ XX XX
+ XX  XX
+
+l:
+
+  XX
+  XX
+  XX
+  XX
+  XX
+   XXX
+
+m:
+
+
+ XXXXX
+ X X XX
+ X X XX
+ X X XX
+ X X XX
+
+n:
+
+
+ XXXXX
+ X   XX
+ X   XX
+ X   XX
+ X   XX
+
+o:
+
+
+  XXXX
+ X   XX
+ X   XX
+ X   XX
+  XXXX
+
+p:
+
+
+ XXXXX
+ X   XX
+ X   XX
+ XXXXX
+ X
+ X
+q:
+
+
+  XXXXX
+ X   XX
+ X   XX
+  XXXXX
+     XX
+     XX
+r:
+
+
+ X XXXX
+ XXX
+ XX
+ XX
+ XX
+
+s:
+
+
+  XXXXX
+ X
+  XXXX
+     XX
+ XXXXX
+
+t:
+
+  XX
+ XXXXX
+  XX
+  XX
+  XX
+   XXX
+
+u:
+
+
+ X   XX
+ X   XX
+ X   XX
+ X   XX
+  XXXX
+
+v:
+
+
+ X   XX
+ X   XX
+ X   XX
+  X XX
+  XXX
+
+w:
+
+
+ X X XX
+ X X XX
+ X X XX
+ X X XX
+  XXXX
+
+x:
+
+
+ XX   XX
+  XX XX
+   XXX
+  XX XX
+ XX   XX
+
+y:
+
+
+ XX   XX
+  XX XX
+   XXX
+   XX
+  XX
+ XX
+z:
+
+
+ XXXXXX
+    XX
+   XX 
+  XX
+ XXXXXX
+
+!:
+   XX
+   XX
+   XX
+   XX
+   XX
+
+   XX
+
+":
+
+ XX XX
+ XX XX
+
+
+
+
+
+#:
+
+  X XX
+ XXXXXX
+  X XX
+  X XX
+ XXXXXX
+  X XX
+
+$:
+   XX
+  XXXX
+ XXXX X
+  XXX
+   XXX 
+ X XXXX
+  XXXX
+   XX
+%:
+
+ XX   X
+X XX X
+ XX X 
+   X XX
+  X X XX
+ X   XX 
+
+&:
+
+  XX 
+ X XX
+  XX 
+ X XX X
+X   XX
+ XXXX X
+
+':
+
+   XX
+   XX
+
+
+
+
+
+(:
+    XX
+   XX
+  XX
+  XX
+  XX
+  XX
+   XX
+    XX
+):
+  XX
+   XX
+    XX
+    XX
+    XX
+    XX
+   XX
+  XX
+*:
+
+ X XX X
+  XXXX
+ XXXXXX
+  XXXX
+ X XX X
+
+
++:
+
+
+   XX 
+   XX 
+ XXXXXX
+   XX 
+   XX  
+
+,:
+
+
+
+
+
+   XX
+   XX
+  XX
+-:
+
+
+       
+
+ XXXXXX
+      
+       
+
+.:
+
+
+
+
+
+   XX
+   XX
+
+/:
+
+     XX
+    XX
+   XX 
+  XX   
+ XX     
+XX      
+
+::
+
+
+   XX
+   XX
+
+   XX
+   XX
+
+;:
+
+
+   XX
+   XX
+
+   XX
+   XX
+  XX
+<:
+
+
+    XXX
+  XXX
+ XX
+  XXX
+    XXX
+
+=:
+
+
+ XXXXXX
+
+
+   
+ XXXXXX
+
+>:
+
+
+ XXX
+   XXX
+     XX
+   XXX
+ XXX
+
+?:
+  XXXX
+     XX
+     XX
+   XXX
+   XX
+
+   XX
+
+@:
+       
+  XXXX  
+ X    X 
+ X  X X 
+ X X XX 
+ X  Xx  
+ X   
+  XXXXX  
+[:
+  XXXX
+  XX
+  XX
+  XX
+  XX
+  XX
+  XX
+  XXXX
+]:
+  XXXX
+    XX
+    XX
+    XX
+    XX
+    XX
+    XX
+  XXXX
+\:
+
+XX      
+ XX     
+  XX   
+   XX 
+    XX
+     XX
+
+^:
+
+   X
+  XXX
+ XX XX
+ X   X
+      
+      
+    
+_:
+
+
+
+
+
+
+
+ XXXXXX
+`:
+
+  XX
+   XX
+
+
+
+
+
+{:
+   XXX
+  XX 
+  XX
+ XX 
+ XX 
+  XX
+  XX 
+   XXX
+}:
+  XXX
+    XX
+    XX
+     XX
+     XX
+    XX
+    XX
+  XXX
+|:
+   XX   
+   XX   
+   XX   
+   XX   
+   XX   
+   XX   
+   XX 
+   XX
+~:
+
+
+       
+
+  XX  X
+ X  XX
+       
+
