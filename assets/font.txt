@@ -1,10 +1,10 @@
 0:
         
   XXXX  
- XX XXX 
- XX XXX 
- XX XXX 
- XX XXX 
+ XX  XX 
+ XX  XX 
+ XX  XX 
+ XX  XX 
   XXXX  
         
 1:
@@ -19,37 +19,37 @@
 2:
         
   XXXX  
- X  XXX 
-    XXX 
-  XXXX  
- XXX    
+ X   XX 
+     XX 
+   XXX  
+  XX    
  XXXXXX 
         
 3:
         
  XXXXX  
-    XXX 
+     XX 
   XXXX  
-    XXX 
-    XXX 
+     XX 
+     XX 
  XXXXX  
         
 4:
         
+   XXX  
   XXXX  
  XX XX  
  X  XX  
- X  XXX 
  XXXXXX 
     XX  
         
 5:
         
+ XXXXXX 
+ X     
  XXXXX  
- XX     
- XXXXX  
-    XXX 
- X  XXX 
+     XX 
+ X   XX 
   XXXX  
         
 6:
@@ -67,24 +67,24 @@
      XX 
     XX  
    XX   
-  XXX   
-  XXX   
+  XX   
+  XX   
         
 8:
         
   XXXX  
- X  XXX 
+ X   XX 
   XXXX  
- X  XXX 
- X  XXX 
+ X   XX 
+ X   XX 
   XXXX  
         
 9:
         
   XXXX  
- X  XXX 
- X  XXX 
+ X   XX 
+ X   XX 
   XXXXX 
-    XXX 
+     XX 
   XXXX  
         

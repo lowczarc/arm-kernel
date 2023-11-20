@@ -53,12 +53,23 @@ pub fn init() void {
         FRAME.buffer[i].blue = 0x10;
     }
 
-    print_glyph([8]u8{ 0x0, 0x18, 0x38, 0x18, 0x18, 0x18, 0x3c, 0x0 }, 0, 0);
-    print_glyph([8]u8{ 0x0, 0x3c, 0x4e, 0xe, 0x3c, 0x70, 0x7e, 0x0 }, 8, 0);
-    print_glyph([8]u8{ 0x0, 0x7c, 0xe, 0x3c, 0xe, 0xe, 0x7c, 0x0 }, 16, 0);
+    print_char('0', 0, 0);
+    print_char('1', 1*8, 0);
+    print_char('2', 2*8, 0);
+    print_char('3', 3*8, 0);
+    print_char('4', 4*8, 0);
+    print_char('5', 5*8, 0);
+    print_char('6', 6*8, 0);
+    print_char('7', 7*8, 0);
+    print_char('8', 8*8, 0);
+    print_char('9', 9*8, 0);
 }
 
-pub fn print_glyph(glyph: [8]u8, x: u16, y: u16) void {
+fn print_char(char: u8, x: u16, y: u16) void {
+    var font = @embedFile("../assets/font.bin");
+    var char_pos: u32 = @intCast(char);
+    var glyph = font[8*char_pos..8*(char_pos+1)];
+
     for (0..8) |i| {
         for (0..8) |j| {
             if ((glyph[i] >> @intCast(j)) & 1 != 0) {

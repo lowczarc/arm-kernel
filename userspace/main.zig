@@ -6,5 +6,6 @@ const syscalls = @import("./syscalls.zig");
 // removed (or maybe moved to an example dir)
 export fn main() void {
     _ = syscalls.write("Hello, world!\n", 14);
+    while (true) {}
     syscalls.exit();
 }
