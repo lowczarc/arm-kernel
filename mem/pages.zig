@@ -86,7 +86,7 @@ pub fn free_page(page: *Page) void {
     free_pages = page;
 }
 
-pub fn kmalloc_in_page(page: *Page, size: usize) ?*u8 {
+pub fn kmalloc_in_page(page: *Page, size: usize) ?*align(4) u8 {
     var aligned_size = size + ((4 - size % 4) % 4);
 
     var header: *PageMallocHeader = @ptrFromInt(page.addr);
@@ -123,12 +123,12 @@ fn same_page(a: *PageMallocHeader, b: *PageMallocHeader) bool {
 pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
     var header: *PageMallocHeader = @ptrFromInt(@intFromPtr(ptr) - @sizeOf(PageMallocHeader));
     header.is_free = true;
-    if (header.next != null and header.next.?.is_free and same_page(header, header.next)) {
+    if (header.next != null and header.next.?.is_free and same_page(header, header.next.?)) {
         var next_header = header.next.?;
         header.next = next_header.next;
         header.size = header.size + @sizeOf(PageMallocHeader) + next_header.size;
     }
-    if (header.prev != null and header.prev.?.is_free and same_page(header, header.prev)) {
+    if (header.prev != null and header.prev.?.is_free and same_page(header, header.prev.?)) {
         var prev_header = header.prev.?;
         prev_header.next = header.next;
         prev_header.size = prev_header.size + @sizeOf(PageMallocHeader) + header.size;
@@ -140,7 +140,7 @@ pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
 
 var kheap: ?*PageMallocHeader = null;
 
-pub fn kmalloc(size: usize) *u8 {
+pub fn kmalloc(size: usize) *align(4) u8 {
     if (kheap == null) {
         kheap = @ptrFromInt(allocate_page_malloc_init().addr);
     }
@@ -156,24 +156,24 @@ pub fn kmalloc(size: usize) *u8 {
         }
     }
 
-    return p.?;
+    return @alignCast(p.?);
 }
 
 pub fn kfree(ptr: *u8) void {
     var header = kfree_in_page(ptr);
 
     if (@intFromPtr(header) % PAGE_SIZE == 0 and header.is_free == true and header.size + @sizeOf(PageMallocHeader) == PAGE_SIZE) {
-        if (header.prev) {
-            header.prev.next = header.next;
+        if (header.prev != null) {
+            header.prev.?.next = header.next;
         }
 
-        if (header.next) {
-            header.next.prev = header.prev;
+        if (header.next != null) {
+            header.next.?.prev = header.prev;
         }
 
         var page_nb = @intFromPtr(header) >> PAGE_SIZE_SHIFT;
 
-        free_page(all_pages[page_nb]);
+        free_page(&all_pages[page_nb]);
     }
 }
 

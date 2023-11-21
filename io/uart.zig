@@ -1,4 +1,6 @@
 const mmio = @import("./mmio.zig");
+const device = @import("./device.zig");
+const pages = @import("../mem/pages.zig");
 
 const BASE: u32 = mmio.BASE + 0x201000;
 
@@ -33,5 +35,56 @@ pub fn write(c: u8) void {
 
 pub fn read() u8 {
     while ((FR.* & FR_RX_FIFO_EMPTY) != 0) {}
-    return DR.*;
+    const c = DR.*;
+
+    if (c == '\r') {
+        return '\n';
+    }
+    return c;
 }
+
+fn cd_open() *device.Userinfos {
+    var dev: *device.Userinfos = @ptrCast(pages.kmalloc(@sizeOf(device.Userinfos)));
+
+    dev.offset = 0;
+
+    return dev;
+}
+
+fn cd_read(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
+    _ = user_infos;
+    for (0..size) |i| {
+        buf[i] = read();
+    }
+
+    return size;
+}
+
+fn cd_write(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
+    _ = user_infos;
+    for (0..size) |i| {
+        write(buf[i]);
+    }
+
+    return size;
+}
+
+fn cd_lseek(user_infos: *device.Userinfos, offset: i32, opts: device.SEEK_OPTS) u32 {
+    _ = user_infos;
+    _ = offset;
+    _ = opts;
+
+    return 0;
+}
+
+fn cd_close(user_infos: *device.Userinfos) void {
+    pages.kfree(@ptrCast(user_infos));
+}
+
+pub const UART_CHAR_DEVICE = device.CharDevice{
+    .open = cd_open,
+    .read = cd_read,
+    .write = cd_write,
+    .lseek = cd_lseek,
+    .close = cd_close,
+};

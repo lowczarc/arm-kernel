@@ -1,10 +1,15 @@
 const print = @import("../lib/print.zig");
 const process = @import("./process.zig");
 const uart = @import("../io/uart.zig");
+const fb = @import("../io/fb.zig");
+const device = @import("../io/device.zig");
+const tty = @import("../io/tty.zig");
 
 const SYS_RESTART = 0;
 const SYS_EXIT = 1;
+const SYS_READ = 3;
 const SYS_WRITE = 4;
+const SYS_OPEN = 5;
 const SYS_DBG = 7;
 
 comptime {
@@ -68,11 +73,53 @@ pub fn exit() usize {
     return 0;
 }
 
-pub fn write(buf: [*]const u8, size: u32) usize {
-    for (0..size) |i| {
-        uart.write(buf[i]);
+fn str_compare(s1: [*]const u8, s2: [*]const u8) bool {
+    var i: u32 = 0;
+    while (s1[i] == s2[i]) : (i += 1) {
+        if (s1[i] == 0) {
+            return true;
+        }
     }
-    return size;
+
+    return false;
+}
+
+pub fn open(buf: [*]const u8) u8 {
+    var char_device: *const device.CharDevice = undefined;
+
+    if (str_compare("/dev/fb", buf)) {
+        char_device = &fb.FB_CHAR_DEVICE;
+    } else if (str_compare("/dev/uart", buf)) {
+        char_device = &uart.UART_CHAR_DEVICE;
+    } else if (str_compare("/dev/tty", buf)) {
+        char_device = &tty.TTY_CHAR_DEVICE;
+    } else {
+        @panic("File system is not implemented yet");
+    }
+
+    return process.register_file_descriptor(process.curr_proc, char_device);
+}
+
+pub fn write(fd: u8, buf: [*]const u8, size: u32) usize {
+    var file_descriptor = process.curr_proc.fds[fd];
+
+    if (file_descriptor == null) {
+        print.println(.{"FileDescriptor not found"});
+        @panic("File descriptor not found");
+    }
+
+    return file_descriptor.?.char_device.write(file_descriptor.?.user_infos, @constCast(buf), size);
+}
+
+pub fn read(fd: u8, buf: [*]const u8, size: u32) usize {
+    var file_descriptor = process.curr_proc.fds[fd];
+
+    if (file_descriptor == null) {
+        print.println(.{"FileDescriptor not found"});
+        @panic("File descriptor not found");
+    }
+
+    return file_descriptor.?.char_device.read(file_descriptor.?.user_infos, @constCast(buf), size);
 }
 
 export fn syscall_handler(r0: u32) void {
@@ -88,7 +135,9 @@ export fn syscall_handler(r0: u32) void {
         ),
         SYS_EXIT => exit(),
         SYS_DBG => dbg(),
-        SYS_WRITE => write(@ptrFromInt(process.curr_proc.regs.r0), process.curr_proc.regs.r1),
+        SYS_OPEN => open(@ptrFromInt(process.curr_proc.regs.r0)),
+        SYS_WRITE => write(@intCast(process.curr_proc.regs.r0), @ptrFromInt(process.curr_proc.regs.r1), process.curr_proc.regs.r2),
+        SYS_READ => read(@intCast(process.curr_proc.regs.r0), @ptrFromInt(process.curr_proc.regs.r1), process.curr_proc.regs.r2),
         else => 0x32,
     };
 

@@ -19,7 +19,7 @@ Features:
 [x] Kernel/Userspace memory separation
 [ ] malloc in user mode
 [x] Framebuffer initialization
-[ ] Logs to Frambuffer
+[x] Logs to Frambuffer
 [ ] "device file" model & piping
 [x] Processes & Context switching
 [ ] Launch multiple processes
@@ -50,11 +50,13 @@ Resources:
 -------------------------------------------------------------------------------
 https://wiki.osdev.org
 
-https://jsandler18.github.io/extra/prop-channel.html
-
 https://developer.arm.com/documentation/ddi0595/2021-12/AArch32-Registers
 
 @AsahiLina's explanation of CVE-2022-32947 is a very entertaining way to
 understand page tables https://www.youtube.com/watch?v=hDek2cp0dmI
 
 BROADCOM BCM2837 ARM Peripherals datasheet
+
+https://linux-kernel-labs.github.io/refs/heads/master/index.html
+
+https://www.kernel.org/doc/html/latest/index.html

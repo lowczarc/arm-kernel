@@ -1,6 +1,8 @@
 const SYS_RESTART = 0;
 const SYS_EXIT = 1;
+const SYS_READ = 3;
 const SYS_WRITE = 4;
+const SYS_OPEN = 5;
 const SYS_DBG = 7;
 
 fn syscall0(number: usize) usize {
@@ -49,6 +51,14 @@ pub fn exit() void {
     _ = syscall0(SYS_EXIT);
 }
 
-pub fn write(buf: [*]const u8, size: u32) usize {
-    return syscall2(SYS_WRITE, @intFromPtr(buf), size);
+pub fn write(fd: u8, buf: [*]const u8, size: u32) usize {
+    return syscall3(SYS_WRITE, @intCast(fd), @intFromPtr(buf), size);
+}
+
+pub fn read(fd: u8, buf: [*]const u8, size: u32) usize {
+    return syscall3(SYS_READ, @intCast(fd), @intFromPtr(buf), size);
+}
+
+pub fn open(buf: [*]const u8) u8 {
+    return @intCast(syscall1(SYS_OPEN, @intFromPtr(buf)));
 }
