@@ -11,20 +11,21 @@ This is not and will never be intended for any kind of production environment.
 
 Features:
 -------------------------------------------------------------------------------
-[x] Boot and ATAGS parsing
-[x] Logs to UART
-[x] Switching between user mode & supervisor mode + basic syscalls
-[x] Memory initialization, page allocation & simple malloc in supervisor mode
-[x] MMU Initialization, Page table translation, Memory permissions
+[x] Boot
+[x] UART Read/Write
 [x] Kernel/Userspace memory separation
-[x] malloc in userspace
-[x] Framebuffer initialization
-[x] Logs to Frambuffer
-[ ] "device file" model & piping
-[x] Processes & Context switching
-[ ] Launch multiple processes
-[ ] Keyboard support
+[x] "device file" model
+[x] open, read, write, close syscalls (on char devices only)
+[x] brk syscall, malloc/free in userspace
+[x] Framebuffer Read/Write
+[x] Virtual TTY with a home-made font :)
+[x] Processes
+[ ] Keyboard
 [ ] File system
+[ ] Multiple processes running at the same time, context switching
+[ ] Pipe
+[ ] Userspace shell
+... Maybe more, don't know yet
 
 Usage:
 -------------------------------------------------------------------------------
