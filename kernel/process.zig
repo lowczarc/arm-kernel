@@ -54,6 +54,7 @@ const Process = extern struct {
     stack_page: ?*pages.Page = null,
     TTB_l2: [*]mmu.TTBNode = undefined,
     fds: [256]?*FileDescriptor = undefined,
+    data_pages: u32,
 };
 
 pub export var curr_proc: *Process = undefined;
@@ -75,7 +76,8 @@ pub fn register_file_descriptor(proc: *Process, char_device: *const device.CharD
 
 fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
     if ((@typeInfo(@TypeOf(prog)) == .Array) and (@typeInfo(@TypeOf(prog)).Array.child == u8)) {
-        for (0..(prog.len + pages.PAGE_SIZE - 1) / pages.PAGE_SIZE) |page_nb| {
+        var needed_pages = (prog.len + pages.PAGE_SIZE - 1) / pages.PAGE_SIZE;
+        for (0..needed_pages) |page_nb| {
             var current_page: [*]u8 = @ptrFromInt(pages.allocate_page().addr);
 
             for (0..pages.PAGE_SIZE) |b| {
@@ -88,6 +90,7 @@ fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
 
             mmu.mmap_TTB_l2(proc.TTB_l2, @intCast(@intFromPtr(current_page) >> 12), @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
         }
+        proc.data_pages = needed_pages;
     } else {
         @compileError("Expected []u8 in prog argument in copy_process_prog_memory");
     }

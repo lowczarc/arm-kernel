@@ -1,9 +1,11 @@
-const SYS_RESTART = 0;
-const SYS_EXIT = 1;
-const SYS_READ = 3;
-const SYS_WRITE = 4;
-const SYS_OPEN = 5;
-const SYS_DBG = 7;
+const SYS_RESTART = 0x0;
+const SYS_EXIT = 0x1;
+const SYS_READ = 0x3;
+const SYS_WRITE = 0x4;
+const SYS_OPEN = 0x5;
+const SYS_CLOSE = 0x6;
+const SYS_DBG = 0x7;
+const SYS_BRK = 0x2d;
 
 fn syscall0(number: usize) usize {
     return asm volatile ("swi 0"
@@ -61,4 +63,8 @@ pub fn read(fd: u8, buf: [*]const u8, size: u32) usize {
 
 pub fn open(buf: [*]const u8) u8 {
     return @intCast(syscall1(SYS_OPEN, @intFromPtr(buf)));
+}
+
+pub fn brk(data_end: usize) usize {
+    return syscall1(SYS_BRK, data_end);
 }

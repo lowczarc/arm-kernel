@@ -4,13 +4,17 @@ const uart = @import("../io/uart.zig");
 const fb = @import("../io/fb.zig");
 const device = @import("../io/device.zig");
 const tty = @import("../io/tty.zig");
+const pages = @import("../mem/pages.zig");
+const mmu = @import("../mem/mmu.zig");
 
-const SYS_RESTART = 0;
-const SYS_EXIT = 1;
-const SYS_READ = 3;
-const SYS_WRITE = 4;
-const SYS_OPEN = 5;
-const SYS_DBG = 7;
+const SYS_RESTART = 0x0;
+const SYS_EXIT = 0x1;
+const SYS_READ = 0x3;
+const SYS_WRITE = 0x4;
+const SYS_OPEN = 0x5;
+const SYS_CLOSE = 0x6;
+const SYS_DBG = 0x7;
+const SYS_BRK = 0x2d;
 
 comptime {
     asm (
@@ -122,6 +126,53 @@ pub fn read(fd: u8, buf: [*]const u8, size: u32) usize {
     return file_descriptor.?.char_device.read(file_descriptor.?.user_infos, @constCast(buf), size);
 }
 
+pub fn close(fd: u8) usize {
+    var file_descriptor = process.curr_proc.fds[fd];
+
+    if (file_descriptor == null) {
+        print.println(.{"FileDescriptor not found"});
+        @panic("File descriptor not found");
+    }
+
+    file_descriptor.?.char_device.close(file_descriptor.?.user_infos);
+
+    return 0;
+}
+
+pub fn brk(data_end: usize) usize {
+    if ((data_end < 0x40000000) or (data_end > 0x80000000)) {
+        return 0x40000000 + process.curr_proc.data_pages * pages.PAGE_SIZE;
+    }
+
+    var new_data_pages = 1 + ((data_end - 0x40000000 - 1) / pages.PAGE_SIZE);
+
+    if (new_data_pages > process.curr_proc.data_pages) {
+        // We allocate new memory
+        print.println(.{"Allocating..."});
+        for (process.curr_proc.data_pages..new_data_pages) |page_nb| {
+            var new_page = pages.allocate_page().addr;
+
+            mmu.mmap_TTB_l2(process.curr_proc.TTB_l2, @intCast(new_page >> 12), @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
+        }
+    } else {
+        // We deallocate memory
+        print.println(.{"Deallocating..."});
+        for (new_data_pages + 1..process.curr_proc.data_pages) |page_nb| {
+            var ph_addr: u32 = @intCast(mmu.get_mmap_ph_addr_TTB_l2(process.curr_proc.TTB_l2, @intCast(page_nb)));
+
+            ph_addr <<= 12;
+
+            pages.free_page(pages.get_page_of(ph_addr));
+
+            mmu.remove_mmap_TTB_l2(process.curr_proc.TTB_l2, @intCast(page_nb));
+        }
+    }
+
+    process.curr_proc.data_pages = new_data_pages;
+
+    return 0x40000000 + (pages.PAGE_SIZE * new_data_pages);
+}
+
 export fn syscall_handler(r0: u32) void {
     process.curr_proc.regs.r0 = r0;
     // The syscall number has been store previously in r7
@@ -135,9 +186,11 @@ export fn syscall_handler(r0: u32) void {
         ),
         SYS_EXIT => exit(),
         SYS_DBG => dbg(),
-        SYS_OPEN => open(@ptrFromInt(process.curr_proc.regs.r0)),
+        SYS_OPEN => @as(usize, open(@ptrFromInt(process.curr_proc.regs.r0))),
         SYS_WRITE => write(@intCast(process.curr_proc.regs.r0), @ptrFromInt(process.curr_proc.regs.r1), process.curr_proc.regs.r2),
         SYS_READ => read(@intCast(process.curr_proc.regs.r0), @ptrFromInt(process.curr_proc.regs.r1), process.curr_proc.regs.r2),
+        SYS_CLOSE => close(@intCast(process.curr_proc.regs.r0)),
+        SYS_BRK => brk(process.curr_proc.regs.r0),
         else => 0x32,
     };
 

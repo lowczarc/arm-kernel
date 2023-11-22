@@ -87,10 +87,7 @@ pub fn allocate_TTB_l2() [*]TTBNode {
     return TTB_node;
 }
 
-const VAddrLvl2 = packed struct {
-    part3: u9,
-    part2: u9
-};
+const VAddrLvl2 = packed struct { part3: u9, part2: u9 };
 
 pub const MMAP_OPTS = struct {
     // By default only accessible to kernel
@@ -116,6 +113,30 @@ pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: u20, addr: u18, opts: MMAP_OPTS) voi
     l3[vaddr.part3].ap = opts.ap;
     l3[vaddr.part3].xn = opts.xn;
     l3[vaddr.part3].active = 0b11;
+}
+
+pub fn get_mmap_ph_addr_TTB_l2(l2: [*]TTBNode, addr: u18) u20 {
+    var vaddr: VAddrLvl2 = @bitCast(addr);
+
+    if (l2[vaddr.part2].active != 0b11) {
+        @panic("This address is not registered");
+    }
+
+    var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
+
+    return l3[vaddr.part3].output_address;
+}
+
+pub fn remove_mmap_TTB_l2(l2: [*]TTBNode, addr: u18) void {
+    var vaddr: VAddrLvl2 = @bitCast(addr);
+
+    if (l2[vaddr.part2].active != 0b11) {
+        return;
+    }
+
+    var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
+
+    l3[vaddr.part3].active = 0b00;
 }
 
 pub fn register_l2(l2: [*]TTBNode, l1_range: u2) void {
@@ -164,7 +185,7 @@ pub fn init() void {
     var kernel_TTB_l2 = allocate_TTB_l2();
 
     for (0x00000..0x3c000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{ .xn= false });
+        mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{ .xn = false });
     }
 
     // MMIO is supposed to start at 0x3f000000 but it seems the frambuffer is

@@ -86,6 +86,12 @@ pub fn free_page(page: *Page) void {
     free_pages = page;
 }
 
+pub fn get_page_of(p: usize) *Page {
+    var page_nb = p >> PAGE_SIZE_SHIFT;
+
+    return &all_pages[page_nb];
+}
+
 pub fn kmalloc_in_page(page: *Page, size: usize) ?*align(4) u8 {
     var aligned_size = size + ((4 - size % 4) % 4);
 
@@ -97,7 +103,7 @@ pub fn kmalloc_in_page(page: *Page, size: usize) ?*align(4) u8 {
         header = header.next.?;
     }
 
-    if (header.size > aligned_size + @sizeOf(PageMallocHeader)) {
+    if (header.size > aligned_size + @sizeOf(PageMallocHeader) + 4) {
         var free_part_header: *PageMallocHeader = @ptrFromInt(@intFromPtr(header) + @sizeOf(PageMallocHeader) + aligned_size);
         free_part_header.prev = header;
         free_part_header.next = header.next;
@@ -145,7 +151,7 @@ pub fn kmalloc(size: usize) *align(4) u8 {
         kheap = @ptrFromInt(allocate_page_malloc_init().addr);
     }
 
-    var p: ?*u8 = null;
+    var p: ?*align(4) u8 = null;
     while (p == null) {
         p = kmalloc_in_page(@ptrCast(kheap), size);
         if (p == null) {
@@ -156,7 +162,7 @@ pub fn kmalloc(size: usize) *align(4) u8 {
         }
     }
 
-    return @alignCast(p.?);
+    return p.?;
 }
 
 pub fn kfree(ptr: *u8) void {
@@ -171,9 +177,7 @@ pub fn kfree(ptr: *u8) void {
             header.next.?.prev = header.prev;
         }
 
-        var page_nb = @intFromPtr(header) >> PAGE_SIZE_SHIFT;
-
-        free_page(&all_pages[page_nb]);
+        free_page(get_page_of(@intFromPtr(header)));
     }
 }
 

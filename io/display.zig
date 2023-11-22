@@ -1,8 +1,8 @@
 const mbox = @import("./mbox.zig");
 const print = @import("../lib/print.zig");
 
-const HEIGHT = 1080;
-const WIDTH = 1920;
+const HEIGHT = 480;
+const WIDTH = 640;
 
 var INIT_FB_MSG: [17]u32 align(16) = [_]u32{
     68, // MSG size
