@@ -81,6 +81,11 @@ const VAddr = packed struct {
 
 var TTB_L1 align(4096) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
 
+// We don't have a way to deallocate properly, the pages also need to be aligned
+// properly and thus cannot be made with kmalloc. Will need to implement a way
+// for kmalloc and kfree to manage alignment.
+// Also, we should find a smart way to count the children of a Node/Leaf and
+// deallocate if it is 0 without having to iterate over the 1024 children.
 pub fn allocate_TTB_l2() [*]TTBNode {
     var TTB_node: [*]TTBNode = @ptrFromInt(pages.allocate_page().addr);
 
@@ -97,7 +102,23 @@ pub const MMAP_OPTS = struct {
     xn: bool = true,
 };
 
-pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: u20, addr: u18, opts: MMAP_OPTS) void {
+pub fn convert_to_ph_addr(arg: anytype) u20 {
+    if (@TypeOf(arg) == u20) {
+        return arg;
+    }
+
+    if (@TypeOf(arg) == u32 or @TypeOf(arg) == usize) {
+        return @intCast(arg >> 12);
+    }
+
+    if (@typeInfo(@TypeOf(arg)) == .Pointer) {
+        return @intCast(@intFromPtr(arg) >> 12);
+    }
+
+    @compileError("Unable to convert type '" ++ @typeName(@TypeOf(arg)) ++ "' to ph_addr. Supported types are u20, u32 and pointers.");
+}
+
+pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: anytype, addr: u18, opts: MMAP_OPTS) void {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
     if (l2[vaddr.part2].active != 0b11) {
@@ -108,14 +129,14 @@ pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: u20, addr: u18, opts: MMAP_OPTS) voi
 
     var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
 
-    l3[vaddr.part3].output_address = ph_addr;
+    l3[vaddr.part3].output_address = convert_to_ph_addr(ph_addr);
     l3[vaddr.part3].af = true;
     l3[vaddr.part3].ap = opts.ap;
     l3[vaddr.part3].xn = opts.xn;
     l3[vaddr.part3].active = 0b11;
 }
 
-pub fn get_mmap_ph_addr_TTB_l2(l2: [*]TTBNode, addr: u18) u20 {
+pub fn get_mmap_ph_addr_TTB_l2(l2: [*]TTBNode, addr: u18) u32 {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
     if (l2[vaddr.part2].active != 0b11) {
@@ -185,13 +206,13 @@ pub fn init() void {
     var kernel_TTB_l2 = allocate_TTB_l2();
 
     for (0x00000..0x3c000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{ .xn = false });
+        mmap_TTB_l2(kernel_TTB_l2, @as(u20, @intCast(i)), @as(u18, @intCast(i)), MMAP_OPTS{ .xn = false });
     }
 
     // MMIO is supposed to start at 0x3f000000 but it seems the frambuffer is
     // allocated on 0x3cXXXXXX
     for (0x3c000..0x40000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @intCast(i), @intCast(i), MMAP_OPTS{});
+        mmap_TTB_l2(kernel_TTB_l2, @as(u20, @intCast(i)), @as(u18, @intCast(i)), MMAP_OPTS{});
     }
 
     register_l2(kernel_TTB_l2, 0);

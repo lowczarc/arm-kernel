@@ -44,7 +44,7 @@ pub fn read() u8 {
 }
 
 fn cd_open() *device.Userinfos {
-    var dev: *device.Userinfos = @ptrCast(pages.kmalloc(@sizeOf(device.Userinfos)));
+    var dev: *device.Userinfos = &pages.kmalloc(device.Userinfos, 1)[0];
 
     dev.offset = 0;
 

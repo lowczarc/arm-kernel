@@ -7,7 +7,7 @@ fn get_fb_size() usize {
 }
 
 fn open() *device.Userinfos {
-    var dev: *device.Userinfos = @ptrCast(pages.kmalloc(@sizeOf(device.Userinfos)));
+    var dev: *device.Userinfos = &pages.kmalloc(device.Userinfos, 1)[0];
 
     dev.offset = 0;
 

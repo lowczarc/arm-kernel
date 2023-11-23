@@ -62,7 +62,7 @@ pub export var curr_proc: *Process = undefined;
 pub fn register_file_descriptor(proc: *Process, char_device: *const device.CharDevice) u8 {
     for (0..proc.fds.len) |i| {
         if (proc.fds[i] == null) {
-            var fd: *FileDescriptor = @ptrCast(pages.kmalloc(@sizeOf(FileDescriptor)));
+            var fd: *FileDescriptor = &pages.kmalloc(FileDescriptor, 1)[0];
             fd.char_device = char_device;
             fd.user_infos = fd.char_device.open();
             proc.fds[i] = fd;
@@ -88,7 +88,7 @@ fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
                 current_page[b] = prog[page_nb * pages.PAGE_SIZE + b];
             }
 
-            mmu.mmap_TTB_l2(proc.TTB_l2, @intCast(@intFromPtr(current_page) >> 12), @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
+            mmu.mmap_TTB_l2(proc.TTB_l2, current_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
         }
         proc.data_pages = needed_pages;
     } else {
@@ -97,7 +97,7 @@ fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
 }
 
 fn new_process(prog: anytype) *Process {
-    var proc: *Process = @ptrCast(pages.kmalloc(@sizeOf(Process)));
+    var proc: *Process = &pages.kmalloc(Process, 1)[0];
 
     proc.regs.lr = 0x40000000;
     proc.TTB_l2 = mmu.allocate_TTB_l2();
@@ -105,7 +105,7 @@ fn new_process(prog: anytype) *Process {
     copy_process_prog_memory(proc, prog);
 
     proc.stack_page = pages.allocate_page();
-    mmu.mmap_TTB_l2(proc.TTB_l2, @intCast(proc.stack_page.?.addr >> 12), 0x3ffff, mmu.MMAP_OPTS{ .ap = 1, .xn = false });
+    mmu.mmap_TTB_l2(proc.TTB_l2, proc.stack_page.?.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = 1, .xn = false });
 
     proc.regs.sp = 0x7ffffffc;
 

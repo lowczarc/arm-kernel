@@ -104,7 +104,7 @@ pub fn open(buf: [*]const u8) u8 {
     return process.register_file_descriptor(process.curr_proc, char_device);
 }
 
-pub fn write(fd: u8, buf: [*]const u8, size: u32) usize {
+pub fn write(fd: u8, buf: [*]u8, size: u32) usize {
     var file_descriptor = process.curr_proc.fds[fd];
 
     if (file_descriptor == null) {
@@ -112,10 +112,10 @@ pub fn write(fd: u8, buf: [*]const u8, size: u32) usize {
         @panic("File descriptor not found");
     }
 
-    return file_descriptor.?.char_device.write(file_descriptor.?.user_infos, @constCast(buf), size);
+    return file_descriptor.?.char_device.write(file_descriptor.?.user_infos, buf, size);
 }
 
-pub fn read(fd: u8, buf: [*]const u8, size: u32) usize {
+pub fn read(fd: u8, buf: [*]u8, size: u32) usize {
     var file_descriptor = process.curr_proc.fds[fd];
 
     if (file_descriptor == null) {
@@ -123,7 +123,7 @@ pub fn read(fd: u8, buf: [*]const u8, size: u32) usize {
         @panic("File descriptor not found");
     }
 
-    return file_descriptor.?.char_device.read(file_descriptor.?.user_infos, @constCast(buf), size);
+    return file_descriptor.?.char_device.read(file_descriptor.?.user_infos, buf, size);
 }
 
 pub fn close(fd: u8) usize {
@@ -152,7 +152,7 @@ pub fn brk(data_end: usize) usize {
         for (process.curr_proc.data_pages..new_data_pages) |page_nb| {
             var new_page = pages.allocate_page().addr;
 
-            mmu.mmap_TTB_l2(process.curr_proc.TTB_l2, @intCast(new_page >> 12), @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
+            mmu.mmap_TTB_l2(process.curr_proc.TTB_l2, new_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
         }
     } else {
         // We deallocate memory

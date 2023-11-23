@@ -9,11 +9,11 @@ export fn main() void {
     var fd = syscalls.open("/dev/tty");
     var fd2 = syscalls.open("/dev/uart");
 
-    var b = malloc.malloc(5);
+    var b = malloc.malloc(1);
 
     while (true) {
-        _ = syscalls.read(fd2, b, 5);
-        _ = syscalls.write(fd, b, 5);
+        _ = syscalls.read(fd2, b, 1);
+        _ = syscalls.write(fd, b, 1);
     }
     syscalls.exit();
 }

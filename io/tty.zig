@@ -3,8 +3,14 @@ const device = @import("./device.zig");
 const print = @import("../lib/print.zig");
 const pages = @import("../mem/pages.zig");
 
-fn get_tty_size() usize {
-    return (display.FRAME.width * display.FRAME.height) / (8 * 8);
+const TTYSize = struct { x: usize, y: usize, chars: usize };
+
+pub fn get_tty_sizes() TTYSize {
+    var x = display.FRAME.width / 8;
+    var y = display.FRAME.height * 8;
+    var chars = x * y;
+
+    return TTYSize{ .x = x, .y = y, .chars = chars };
 }
 
 fn print_char(char: u8, x: u16, y: u16) void {
@@ -23,26 +29,10 @@ fn print_char(char: u8, x: u16, y: u16) void {
     }
 }
 
-fn open() *device.Userinfos {
-    var dev: *device.Userinfos = @ptrCast(pages.kmalloc(@sizeOf(device.Userinfos)));
-
-    dev.offset = 0;
-
-    return dev;
-}
-
-fn read(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
-    _ = user_infos;
-    _ = buf;
-    _ = size;
-
-    return 0;
-}
-
-fn write(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
+pub fn write_from_offset(offset: *usize, buf: [*]u8, size: usize) usize {
     var written: u32 = 0;
-    var lb: u32 = user_infos.offset / (display.FRAME.width / 8);
-    var xi: u32 = user_infos.offset % (display.FRAME.width / 8);
+    var lb: u32 = offset.* / get_tty_sizes().x;
+    var xi: u32 = offset.* % get_tty_sizes().x;
     for (0..size) |i| {
         if (buf[i] == '\n') {
             lb += 1;
@@ -67,21 +57,41 @@ fn write(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
         written += 1;
     }
 
-    user_infos.offset = lb * (display.FRAME.width / 8) + xi;
+    offset.* = lb * (display.FRAME.width / 8) + xi;
 
     return written;
+}
+
+fn open() *device.Userinfos {
+    var dev: *device.Userinfos = &pages.kmalloc(device.Userinfos, 1)[0];
+
+    dev.offset = 0;
+
+    return dev;
+}
+
+fn read(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
+    _ = user_infos;
+    _ = buf;
+    _ = size;
+
+    return 0;
+}
+
+fn write(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
+    return write_from_offset(&user_infos.offset, buf, size);
 }
 
 fn lseek(user_infos: *device.Userinfos, offset: i32, opts: device.SEEK_OPTS) u32 {
     const base_offset: i32 = @intCast(switch (opts) {
         .SET => 0,
         .CURR => user_infos.offset,
-        .END => get_tty_size(),
+        .END => get_tty_sizes().chars,
     });
 
     const new_offset: u32 = @intCast(base_offset + offset);
 
-    user_infos.offset = @max(0, @min(get_tty_size(), new_offset));
+    user_infos.offset = @max(0, @min(get_tty_sizes().chars, new_offset));
 
     return user_infos.offset;
 }

@@ -1,5 +1,6 @@
 const syscalls = @import("./syscalls.zig");
 const print = @import("../lib/print.zig");
+const tty = @import("../io/tty.zig");
 
 comptime {
     asm (
@@ -56,17 +57,33 @@ pub extern fn __undefined_instruction_handler() void;
 pub extern fn __prefetch_abort_handler() void;
 pub extern fn __data_abort_handler() void;
 
-export fn panic_handler(code: u32, from: u32) usize {
+fn strlen(s: [*]u8) usize {
+    var i = 0;
+    while (true) {
+        if (s[i] == 0) {
+            return i;
+        }
+        i += 1;
+    }
+}
+
+export fn panic_handler(code: u32, from: u32, cause: [*]u8) usize {
     print.println(.{"## KERNEL PANIC ##"});
 
     switch (code) {
         1 => print.prints("## Cause: Undefined instruction\n"),
         2 => print.prints("## Cause: Prefetch abort\n"),
         3 => print.prints("## Cause: Data abort\n"),
+        4 => {
+            print.prints("## Cause: ");
+            print.prints(cause);
+            print.prints("\n");
+        },
         else => print.prints("## Cause: Unknown\n"),
     }
 
     print.println(.{ "## From:", from });
+
     _ = syscalls.exit();
     return 0;
 }

@@ -92,8 +92,8 @@ pub fn get_page_of(p: usize) *Page {
     return &all_pages[page_nb];
 }
 
-pub fn kmalloc_in_page(page: *Page, size: usize) ?*align(4) u8 {
-    var aligned_size = size + ((4 - size % 4) % 4);
+pub fn kmalloc_in_page(comptime T: type, page: *Page, nb: usize) ?[*]align(4)T {
+    var aligned_size = (nb * @sizeOf(T)) + ((4 - (nb*@sizeOf(T)) % 4) % 4);
 
     var header: *PageMallocHeader = @ptrFromInt(page.addr);
     while ((header.is_free == false) or (header.size < aligned_size)) {
@@ -146,14 +146,14 @@ pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
 
 var kheap: ?*PageMallocHeader = null;
 
-pub fn kmalloc(size: usize) *align(4) u8 {
+pub fn kmalloc(comptime T: type, size: usize) [*]align(4) T {
     if (kheap == null) {
         kheap = @ptrFromInt(allocate_page_malloc_init().addr);
     }
 
-    var p: ?*align(4) u8 = null;
+    var p: ?[*]align(4) T = null;
     while (p == null) {
-        p = kmalloc_in_page(@ptrCast(kheap), size);
+        p = kmalloc_in_page(T, @ptrCast(kheap), size);
         if (p == null) {
             var new_kheap: *PageMallocHeader = @ptrCast(allocate_page_malloc_init());
             new_kheap.next = kheap;
