@@ -5,6 +5,7 @@ const syscalls = @import("./kernel/syscalls.zig");
 const print = @import("./lib/print.zig");
 const display = @import("./io/display.zig");
 const atags = @import("./io/atags.zig");
+// const emmc = @import("./io/emmc.zig");
 const pages = @import("./mem/pages.zig");
 const mmu = @import("./mem/mmu.zig");
 const std = @import("std");
@@ -35,6 +36,8 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
     mmu.init();
     display.init();
     syscalls.init();
+
+    // print.println(.{emmc.read()});
 
     print.println(.{ "Switching to user mode: ", 0x40000000 });
 

@@ -38,7 +38,7 @@ clean:
 	@cd userspace && make clean
 
 qemu:
-	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin
+	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin -device sd-card,drive=sdport -drive id=sdport,if=none,format=raw,file=assets/sdcard
 
 qemu-screen:
 	@$(QEMU) -M $(QEMU_MACHINE) -serial /dev/stdout -semihosting -kernel init.bin

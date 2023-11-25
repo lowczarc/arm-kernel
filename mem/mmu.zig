@@ -1,75 +1,90 @@
 const print = @import("../lib/print.zig");
 const pages = @import("./pages.zig");
 
-// PL0 = User mode
-// Pl1 = Other modes (Supervisor)
+// We are using the ARMv7-A Long descriptor translation table.
+// Relevant ARM Documentation:
+// https://developer.arm.com/documentation/ddi0406/c/System-Level-Architecture/Virtual-Memory-System-Architecture--VMSA-/Long-descriptor-translation-table-format/Long-descriptor-translation-table-format-descriptors
+
+const PageStatus = enum(u2) {
+    Inactive = 0b00,
+
+    // We never use block for now but it can be used for 1GB in Level 1 or 2MB in
+    // level 2. It is ignored if used at level 3.
+    Block = 0b01,
+
+    // Tables give 4KB pages at level 3 only
+    Page = 0b11,
+};
+
+pub const NodeAP = enum(u2) {
+    NoEffect = 0b00,
+    PL1 = 0b01,
+    RO = 0b10,
+    RO_PL1 = 0b11,
+};
 
 pub const TTBNode = packed struct {
-    // Should be 0b11 for 4KB pages, 0bx0 to ignore
-    active: u2 = 0b00,
+    pageStatus: PageStatus = PageStatus.Inactive,
 
-    _padding_2: u10 = 0,
+    _padding_1: u10 = 0,
 
     next_level_table_address: u20 = 0,
 
-    should_be_zero_2: u8 = 0,
+    _should_be_zero_1: u8 = 0,
+    _should_be_zero_2: u12 = 0,
+    _padding_2: u7 = 0,
 
-    should_be_zero: u12 = 0,
-
-    _padding_1: u7 = 0,
-
-    // true makes the subtree memory non-executable to PL1
+    // true makes the subtree memory non-executable, PXN is for priviledge, XN for
+    // everyone. A bit confusing but XN stands for "eXecute Never". I might make a
+    // enum for it in the future instead of a boolean bc this is definitely the kind
+    // of thing I will forget. And I don't want to change the names too much to facilitate
+    // reading the ARM doc
     pxn_table: bool = false,
-
-    // true makes the subtree memory non-executable
     xn_table: bool = false,
 
-    // Access permission:
-    // 0b00 = No effect
-    // 0b01 = Subtree inaccessible to PL0
-    // 0b10 = Subtree memory RO
-    // 0b11 = Subtree RO and inaccessible to PL0
-    ap_table: u2 = 0,
+    ap_table: NodeAP = NodeAP.NoEffect,
 
     // Something to do with secure state, we can ignore it
     ns_table: bool = false,
 };
 
-const TTBLeaf = packed struct {
-    // Should be 0b11 for 4KB pages, 0bx0 to ignore
-    active: u2 = 0b00,
+pub const AP = enum(u2) {
+    RW_PL1 = 0b00,
+    RW_All = 0b01,
+    RO_PL1 = 0b10,
+    RO_All = 0b11,
+};
 
+const TTBLeaf = packed struct {
+    pageStatus: PageStatus = PageStatus.Inactive,
+
+    // I don't understand what is in this yet
     mem_attr: u4,
 
-    // Access permission:
-    // 0b00 = R/W by PL1 only
-    // 0b01 = R/W by everyone
-    // 0b10 = RO by PL1 only
-    // 0b11 = RO by everyone
-    ap: u2,
+    ap: AP,
 
     // Sharability field
+    // Seems to have something to do with PL2, we can probably ignore
     sh: u2,
 
-    // Access flag, must be true for some reason
+    // Access flag, if not true we get a data access fault.
     af: bool,
 
-    _should_be_zero_3: u1,
+    _should_be_zero_1: u1,
 
     output_address: u20,
 
-    _should_be_zero_2: u8,
-
-    _should_be_zero_1: u12,
+    _should_be_zero_2: u20,
 
     contiguous_hint: bool,
 
+    // Same as above. Unintuitive but true means non executable.
     pxn: bool,
-
     xn: bool,
 
+    // I'll probably use this (and maybe the next 5bits if it's fine to use) to
+    // reference count the memory shared between process ?
     _reserved_for_software_use: u4,
-
     _ignored: u5,
 };
 
@@ -95,10 +110,9 @@ pub fn allocate_TTB_l2() [*]TTBNode {
 const VAddrLvl2 = packed struct { part3: u9, part2: u9 };
 
 pub const MMAP_OPTS = struct {
-    // By default only accessible to kernel
-    ap: u2 = 0,
+    ap: AP = AP.RW_PL1,
 
-    // By default non executable
+    // By default non executable (xn = eXecute Never)
     xn: bool = true,
 };
 
@@ -121,10 +135,10 @@ pub fn convert_to_ph_addr(arg: anytype) u20 {
 pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: anytype, addr: u18, opts: MMAP_OPTS) void {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
-    if (l2[vaddr.part2].active != 0b11) {
+    if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         var third_level_page: u20 = @intCast(pages.allocate_page().addr >> 12);
         l2[vaddr.part2].next_level_table_address = third_level_page;
-        l2[vaddr.part2].active = 0b11;
+        l2[vaddr.part2].pageStatus = PageStatus.Page;
     }
 
     var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
@@ -133,13 +147,13 @@ pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: anytype, addr: u18, opts: MMAP_OPTS)
     l3[vaddr.part3].af = true;
     l3[vaddr.part3].ap = opts.ap;
     l3[vaddr.part3].xn = opts.xn;
-    l3[vaddr.part3].active = 0b11;
+    l3[vaddr.part3].pageStatus = PageStatus.Page;
 }
 
 pub fn get_mmap_ph_addr_TTB_l2(l2: [*]TTBNode, addr: u18) u32 {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
-    if (l2[vaddr.part2].active != 0b11) {
+    if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         @panic("This address is not registered");
     }
 
@@ -151,18 +165,18 @@ pub fn get_mmap_ph_addr_TTB_l2(l2: [*]TTBNode, addr: u18) u32 {
 pub fn remove_mmap_TTB_l2(l2: [*]TTBNode, addr: u18) void {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
-    if (l2[vaddr.part2].active != 0b11) {
+    if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         return;
     }
 
     var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
 
-    l3[vaddr.part3].active = 0b00;
+    l3[vaddr.part3].pageStatus = PageStatus.Inactive;
 }
 
 pub fn register_l2(l2: [*]TTBNode, l1_range: u2) void {
     TTB_L1[l1_range].next_level_table_address = @intCast(@intFromPtr(l2) >> 12);
-    TTB_L1[l1_range].active = 0b11;
+    TTB_L1[l1_range].pageStatus = PageStatus.Page;
 }
 
 const TTBR0 = packed struct {

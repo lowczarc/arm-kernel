@@ -11,9 +11,12 @@ export fn main() void {
 
     var b = malloc.malloc(1);
 
+    _ = syscalls.write(fd, "Hello, world!\n\n", 15);
+    _ = syscalls.write(fd, "Please type \"q\" to quit...\n", 27);
     while (true) {
         _ = syscalls.read(fd2, b, 1);
-        _ = syscalls.write(fd, b, 1);
+        if (b[0] == 'q') {
+            syscalls.exit();
+        }
     }
-    syscalls.exit();
 }

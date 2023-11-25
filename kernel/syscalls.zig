@@ -152,7 +152,7 @@ pub fn brk(data_end: usize) usize {
         for (process.curr_proc.data_pages..new_data_pages) |page_nb| {
             var new_page = pages.allocate_page().addr;
 
-            mmu.mmap_TTB_l2(process.curr_proc.TTB_l2, new_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
+            mmu.mmap_TTB_l2(process.curr_proc.TTB_l2, new_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = mmu.AP.RW_All });
         }
     } else {
         // We deallocate memory

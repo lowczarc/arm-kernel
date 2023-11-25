@@ -88,7 +88,7 @@ fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
                 current_page[b] = prog[page_nb * pages.PAGE_SIZE + b];
             }
 
-            mmu.mmap_TTB_l2(proc.TTB_l2, current_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = 1 });
+            mmu.mmap_TTB_l2(proc.TTB_l2, current_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = mmu.AP.RW_All });
         }
         proc.data_pages = needed_pages;
     } else {
@@ -105,7 +105,7 @@ fn new_process(prog: anytype) *Process {
     copy_process_prog_memory(proc, prog);
 
     proc.stack_page = pages.allocate_page();
-    mmu.mmap_TTB_l2(proc.TTB_l2, proc.stack_page.?.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = 1, .xn = false });
+    mmu.mmap_TTB_l2(proc.TTB_l2, proc.stack_page.?.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = mmu.AP.RW_All, .xn = false });
 
     proc.regs.sp = 0x7ffffffc;
 
