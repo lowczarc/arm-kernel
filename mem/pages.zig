@@ -12,17 +12,10 @@ pub const Page = struct {
     next: ?*Page,
 };
 
-pub var all_pages: [*]Page = undefined;
-pub var free_pages: ?*Page = null;
+var all_pages: [*]Page = undefined;
+var free_pages: ?*Page = null;
 
 extern const __end: *usize;
-
-fn debugPage(page: *Page) void {
-    print.println(.{ "Page: ", @intFromPtr(page) });
-    print.println(.{ "\taddr: ", page.addr });
-    print.println(.{ "\tallocated: ", page.allocated });
-    print.println(.{ "\tkernel: ", page.kernel });
-}
 
 pub fn init() void {
     var num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
@@ -76,11 +69,14 @@ pub fn align_to_page(comptime T: type) type {
 
         return @Type(R);
     } else {
-        @compileError("kpalloc can only be used to allocate pointers");
+        @compileError("align_to_page can only be used with pointers");
     }
 }
 
 pub fn kpalloc(comptime T: type) align_to_page(T) {
+    if (@typeInfo(T).Pointer.child != anyopaque and @sizeOf(@typeInfo(T).Pointer.child) > PAGE_SIZE) {
+        @compileError("Cannot use kpalloc for " ++ @typeName(T) ++ " which is larger by PAGE_SIZE");
+    }
     return @ptrCast(allocate_page().addr);
 }
 
@@ -121,7 +117,7 @@ pub fn kpfree(p: anytype) void {
     free_page(get_page_of(@intFromPtr(p)));
 }
 
-pub fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4) T {
+fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4)T {
     var aligned_size = (nb * @sizeOf(T)) + ((4 - (nb * @sizeOf(T)) % 4) % 4);
 
     var header: *PageMallocHeader = page;
@@ -155,7 +151,7 @@ fn same_page(a: *PageMallocHeader, b: *PageMallocHeader) bool {
     return (@intFromPtr(a) / PAGE_SIZE) == (@intFromPtr(b) / PAGE_SIZE);
 }
 
-pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
+fn kfree_in_page(ptr: *u8) *PageMallocHeader {
     var header: *PageMallocHeader = @ptrFromInt(@intFromPtr(ptr) - @sizeOf(PageMallocHeader));
     header.is_free = true;
     if (header.next != null and header.next.?.is_free and same_page(header, header.next.?)) {
@@ -208,14 +204,4 @@ pub fn kfree(ptr: *u8) void {
 
         free_page(get_page_of(@intFromPtr(header)));
     }
-}
-
-pub fn kdbg_alloc(ptr: *u8) void {
-    var header: *PageMallocHeader = @ptrFromInt(@intFromPtr(ptr) - @sizeOf(PageMallocHeader));
-    print.println(.{ "Header: ", @intFromPtr(header) });
-    print.println(.{ "\taddr: ", @intFromPtr(ptr) });
-    print.println(.{ "\tsize: ", header.size });
-    print.println(.{ "\tis_free: ", header.is_free });
-    print.println(.{ "\tnext: ", @intFromPtr(header.next) });
-    print.println(.{ "\tprev: ", @intFromPtr(header.prev) });
 }

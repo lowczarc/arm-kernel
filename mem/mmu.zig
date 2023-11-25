@@ -96,8 +96,8 @@ const VAddr = packed struct {
 
 var TTB_L1 align(pages.PAGE_SIZE) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
 
-pub const TTBNodeTable = *align(pages.PAGE_SIZE)[512]TTBNode;
-const TTBLeafTable = *align(pages.PAGE_SIZE)[512]TTBLeaf;
+pub const TTBNodeTable = *align(pages.PAGE_SIZE) [512]TTBNode;
+const TTBLeafTable = *align(pages.PAGE_SIZE) [512]TTBLeaf;
 
 // We don't have a way to deallocate properly, the pages also need to be aligned
 // properly and thus cannot be made with kmalloc. Will need to implement a way
@@ -178,7 +178,7 @@ pub fn register_l2(l2: TTBNodeTable, l1_range: u2) void {
 const TTBR0 = packed struct {
     _padding_1: u24 = 0,
     _padding_2: u8 = 0,
-    BADDR: *align(4096)[4]TTBNode,
+    BADDR: *align(4096) [4]TTBNode,
 };
 
 const Split = packed struct {
