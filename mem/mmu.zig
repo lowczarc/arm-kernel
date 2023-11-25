@@ -102,7 +102,7 @@ var TTB_L1 align(4096) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} 
 // Also, we should find a smart way to count the children of a Node/Leaf and
 // deallocate if it is 0 without having to iterate over the 1024 children.
 pub fn allocate_TTB_l2() [*]TTBNode {
-    var TTB_node: [*]TTBNode = @ptrFromInt(pages.allocate_page().addr);
+    var TTB_node = pages.kpalloc([*]TTBNode);
 
     return TTB_node;
 }
@@ -116,7 +116,7 @@ pub const MMAP_OPTS = struct {
     xn: bool = true,
 };
 
-pub fn convert_to_ph_addr(arg: anytype) u20 {
+pub fn as_phys(arg: anytype) u20 {
     if (@TypeOf(arg) == u20) {
         return arg;
     }
@@ -135,15 +135,16 @@ pub fn convert_to_ph_addr(arg: anytype) u20 {
 pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: anytype, addr: u18, opts: MMAP_OPTS) void {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
+    var l3: [*]TTBLeaf = undefined;
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
-        var third_level_page: u20 = @intCast(pages.allocate_page().addr >> 12);
-        l2[vaddr.part2].next_level_table_address = third_level_page;
+        l3 = pages.kpalloc([*]TTBLeaf);
+        l2[vaddr.part2].next_level_table_address = as_phys(l3);
         l2[vaddr.part2].pageStatus = PageStatus.Page;
+    } else {
+        l3 = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
     }
 
-    var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
-
-    l3[vaddr.part3].output_address = convert_to_ph_addr(ph_addr);
+    l3[vaddr.part3].output_address = as_phys(ph_addr);
     l3[vaddr.part3].af = true;
     l3[vaddr.part3].ap = opts.ap;
     l3[vaddr.part3].xn = opts.xn;
@@ -175,7 +176,7 @@ pub fn remove_mmap_TTB_l2(l2: [*]TTBNode, addr: u18) void {
 }
 
 pub fn register_l2(l2: [*]TTBNode, l1_range: u2) void {
-    TTB_L1[l1_range].next_level_table_address = @intCast(@intFromPtr(l2) >> 12);
+    TTB_L1[l1_range].next_level_table_address = as_phys(l2);
     TTB_L1[l1_range].pageStatus = PageStatus.Page;
 }
 

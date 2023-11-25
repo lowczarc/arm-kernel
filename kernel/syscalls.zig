@@ -150,7 +150,7 @@ pub fn brk(data_end: usize) usize {
         // We allocate new memory
         print.println(.{"Allocating..."});
         for (process.curr_proc.data_pages..new_data_pages) |page_nb| {
-            var new_page = pages.allocate_page().addr;
+            var new_page = @intFromPtr(pages.kpalloc(*anyopaque));
 
             mmu.mmap_TTB_l2(process.curr_proc.TTB_l2, new_page, @intCast(page_nb), mmu.MMAP_OPTS{ .xn = false, .ap = mmu.AP.RW_All });
         }
@@ -162,7 +162,7 @@ pub fn brk(data_end: usize) usize {
 
             ph_addr <<= 12;
 
-            pages.free_page(pages.get_page_of(ph_addr));
+            pages.kpfree(@as(*anyopaque, @ptrFromInt(ph_addr)));
 
             mmu.remove_mmap_TTB_l2(process.curr_proc.TTB_l2, @intCast(page_nb));
         }

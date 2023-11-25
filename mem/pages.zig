@@ -1,8 +1,11 @@
 const print = @import("../lib/print.zig");
 const atags = @import("../io/atags.zig");
 
+const PAGE_SIZE_SHIFT = 12; // 1 << 12 == atags.ATAG.Core.?.PageSize;
+pub const PAGE_SIZE = 1 << PAGE_SIZE_SHIFT;
+
 pub const Page = struct {
-    addr: usize,
+    addr: *align(PAGE_SIZE) allowzero anyopaque,
     allocated: bool,
     kernel: bool,
     next: ?*Page,
@@ -20,35 +23,31 @@ fn debugPage(page: *Page) void {
     print.println(.{ "\tkernel: ", page.kernel });
 }
 
-const PAGE_SIZE_SHIFT = 12; // 1 << 12 == atags.ATAG.Core.?.PageSize;
-pub const PAGE_SIZE = 1 << PAGE_SIZE_SHIFT;
 pub fn init() void {
-    print.prints("\n=========================\n");
     var num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
     var all_pages_size = num_pages * @sizeOf(Page);
-    print.println(.{ "all_pages_size: ", all_pages_size, " (Mem.Size: ", atags.ATAG.Mem.?.Size, ")" });
 
     all_pages = @ptrCast(&__end);
 
     var kernel_pages = (@intFromPtr(&__end) >> PAGE_SIZE_SHIFT);
     var page_medata_size = (all_pages_size >> PAGE_SIZE_SHIFT) + 1; // we add one just to be sure
+
     for (0..(kernel_pages + page_medata_size)) |i| {
         var page = &all_pages[i];
-        page.addr = i << PAGE_SIZE_SHIFT;
+        page.addr = @ptrFromInt(i << PAGE_SIZE_SHIFT);
         page.allocated = true;
         page.kernel = true;
     }
+
     for ((kernel_pages + page_medata_size)..num_pages) |i| {
         var page = &all_pages[i];
-        page.addr = i << PAGE_SIZE_SHIFT;
+        page.addr = @ptrFromInt(i << PAGE_SIZE_SHIFT);
         page.allocated = false;
         page.kernel = false;
         page.next = free_pages;
         free_pages = page;
     }
-    print.println(.{ "kernel_pages: ", kernel_pages });
-    print.println(.{ "free_pages: ", @intFromPtr(free_pages) });
-    print.prints("=========================\n\n");
+
 }
 
 const PageMallocHeader = struct {
@@ -58,44 +57,79 @@ const PageMallocHeader = struct {
     prev: ?*PageMallocHeader,
 };
 
-pub fn allocate_page() *Page {
+fn allocate_page() *Page {
     var page = free_pages.?;
     free_pages = page.next;
     page.allocated = true;
     page.next = undefined;
-    var ptr: [*]u8 = @ptrFromInt(page.addr);
+    var ptr: [*]u8 = @ptrCast(page.addr);
     for (0..PAGE_SIZE) |i| {
         ptr[i] = 0;
     }
     return page;
 }
 
-pub fn allocate_page_malloc_init() *Page {
-    var page = allocate_page();
-    var header: *PageMallocHeader = @ptrFromInt(page.addr);
+fn align_to_page(comptime T: type) type {
+        var I = @typeInfo(T);
+        if (I == .Pointer) {
+            I.Pointer.alignment = PAGE_SIZE;
+
+            return @Type(I);
+        } else if (I != .Array) {
+            I.Array.alignment = PAGE_SIZE;
+
+            return @Type(I);
+        } else {
+            @compileError("kpalloc can only be used to allocate pointers or arrays");
+        }
+
+}
+
+pub fn kpalloc(comptime T: type) align_to_page(T) {
+    return @ptrCast(allocate_page().addr);
+}
+
+fn allocate_page_malloc_init() *align(PAGE_SIZE) PageMallocHeader {
+    var header = kpalloc(*PageMallocHeader);
     header.size = PAGE_SIZE - @sizeOf(PageMallocHeader);
     header.is_free = true;
     header.next = null;
     header.prev = null;
-    return page;
+    return header;
 }
 
-pub fn free_page(page: *Page) void {
+fn free_page(page: *Page) void {
     page.allocated = false;
     page.next = free_pages;
     free_pages = page;
 }
 
-pub fn get_page_of(p: usize) *Page {
-    var page_nb = p >> PAGE_SIZE_SHIFT;
+pub fn get_page_of(p: anytype) *Page {
+    var page_nb: u20 = undefined;
+
+    if (@TypeOf(p) == u32 or @TypeOf(p) == usize) {
+        page_nb = @intCast(p >> PAGE_SIZE_SHIFT);
+    } else if (@TypeOf(p) == u20) {
+        page_nb = @intCast(p);
+    } else if (@typeInfo(@TypeOf(p)) != .Pointer and @typeInfo(@TypeOf(p)) != .Array) {
+        page_nb = @intCast(@intFromPtr(p) >> PAGE_SIZE_SHIFT);
+    }
 
     return &all_pages[page_nb];
 }
 
-pub fn kmalloc_in_page(comptime T: type, page: *Page, nb: usize) ?[*]align(4)T {
+pub fn kpfree(p: anytype) void {
+    if (@typeInfo(@TypeOf(p)) != .Pointer and @typeInfo(@TypeOf(p)) != .Array) {
+        @compileError("kpfree can only be used to free pointers or arrays");
+    }
+
+    free_page(get_page_of(@intFromPtr(p)));
+}
+
+pub fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4)T {
     var aligned_size = (nb * @sizeOf(T)) + ((4 - (nb*@sizeOf(T)) % 4) % 4);
 
-    var header: *PageMallocHeader = @ptrFromInt(page.addr);
+    var header: *PageMallocHeader = page;
     while ((header.is_free == false) or (header.size < aligned_size)) {
         if (header.next == null) {
             return null;
@@ -113,7 +147,7 @@ pub fn kmalloc_in_page(comptime T: type, page: *Page, nb: usize) ?[*]align(4)T {
         header.next = free_part_header;
     }
 
-    if ((@intFromPtr(header) + @sizeOf(PageMallocHeader) + aligned_size) > (page.addr + PAGE_SIZE)) {
+    if ((@intFromPtr(header) + @sizeOf(PageMallocHeader) + aligned_size) > (@intFromPtr(page) + PAGE_SIZE)) {
         return null;
     }
 
@@ -144,18 +178,18 @@ pub fn kfree_in_page(ptr: *u8) *PageMallocHeader {
     return header;
 }
 
-var kheap: ?*PageMallocHeader = null;
+var kheap: ?*align(PAGE_SIZE) PageMallocHeader = null;
 
 pub fn kmalloc(comptime T: type, size: usize) [*]align(4) T {
     if (kheap == null) {
-        kheap = @ptrFromInt(allocate_page_malloc_init().addr);
+        kheap = allocate_page_malloc_init();
     }
 
     var p: ?[*]align(4) T = null;
     while (p == null) {
-        p = kmalloc_in_page(T, @ptrCast(kheap), size);
+        p = kmalloc_in_page(T, kheap.?, size);
         if (p == null) {
-            var new_kheap: *PageMallocHeader = @ptrCast(allocate_page_malloc_init());
+            var new_kheap = allocate_page_malloc_init();
             new_kheap.next = kheap;
             kheap.?.prev = new_kheap;
             kheap = new_kheap;

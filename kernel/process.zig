@@ -78,7 +78,7 @@ fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
     if ((@typeInfo(@TypeOf(prog)) == .Array) and (@typeInfo(@TypeOf(prog)).Array.child == u8)) {
         var needed_pages = (prog.len + pages.PAGE_SIZE - 1) / pages.PAGE_SIZE;
         for (0..needed_pages) |page_nb| {
-            var current_page: [*]u8 = @ptrFromInt(pages.allocate_page().addr);
+            var current_page = pages.kpalloc([*]u8);
 
             for (0..pages.PAGE_SIZE) |b| {
                 if (prog.len < page_nb * pages.PAGE_SIZE + b) {
@@ -104,7 +104,7 @@ fn new_process(prog: anytype) *Process {
 
     copy_process_prog_memory(proc, prog);
 
-    proc.stack_page = pages.allocate_page();
+    proc.stack_page = pages.get_page_of(pages.kpalloc(*volatile anyopaque));
     mmu.mmap_TTB_l2(proc.TTB_l2, proc.stack_page.?.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = mmu.AP.RW_All, .xn = false });
 
     proc.regs.sp = 0x7ffffffc;
