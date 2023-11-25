@@ -52,7 +52,7 @@ const FileDescriptor = struct {
 const Process = extern struct {
     regs: Regs = Regs{},
     stack_page: ?*pages.Page = null,
-    TTB_l2: [*]mmu.TTBNode = undefined,
+    TTB_l2: mmu.TTBNodeTable = undefined,
     fds: [256]?*FileDescriptor = undefined,
     data_pages: u32,
 };
@@ -104,7 +104,7 @@ fn new_process(prog: anytype) *Process {
 
     copy_process_prog_memory(proc, prog);
 
-    proc.stack_page = pages.get_page_of(pages.kpalloc(*volatile anyopaque));
+    proc.stack_page = pages.get_page_of(pages.kpalloc(*anyopaque));
     mmu.mmap_TTB_l2(proc.TTB_l2, proc.stack_page.?.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = mmu.AP.RW_All, .xn = false });
 
     proc.regs.sp = 0x7ffffffc;

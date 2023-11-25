@@ -3,9 +3,10 @@ const atags = @import("../io/atags.zig");
 
 const PAGE_SIZE_SHIFT = 12; // 1 << 12 == atags.ATAG.Core.?.PageSize;
 pub const PAGE_SIZE = 1 << PAGE_SIZE_SHIFT;
+pub const PhysAddrRange = *allowzero align(PAGE_SIZE) anyopaque;
 
 pub const Page = struct {
-    addr: *align(PAGE_SIZE) allowzero anyopaque,
+    addr: PhysAddrRange,
     allocated: bool,
     kernel: bool,
     next: ?*Page,
@@ -47,7 +48,6 @@ pub fn init() void {
         page.next = free_pages;
         free_pages = page;
     }
-
 }
 
 const PageMallocHeader = struct {
@@ -69,20 +69,15 @@ fn allocate_page() *Page {
     return page;
 }
 
-fn align_to_page(comptime T: type) type {
-        var I = @typeInfo(T);
-        if (I == .Pointer) {
-            I.Pointer.alignment = PAGE_SIZE;
+pub fn align_to_page(comptime T: type) type {
+    var R = @typeInfo(T);
+    if (R == .Pointer) {
+        R.Pointer.alignment = PAGE_SIZE;
 
-            return @Type(I);
-        } else if (I != .Array) {
-            I.Array.alignment = PAGE_SIZE;
-
-            return @Type(I);
-        } else {
-            @compileError("kpalloc can only be used to allocate pointers or arrays");
-        }
-
+        return @Type(R);
+    } else {
+        @compileError("kpalloc can only be used to allocate pointers");
+    }
 }
 
 pub fn kpalloc(comptime T: type) align_to_page(T) {
@@ -126,8 +121,8 @@ pub fn kpfree(p: anytype) void {
     free_page(get_page_of(@intFromPtr(p)));
 }
 
-pub fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4)T {
-    var aligned_size = (nb * @sizeOf(T)) + ((4 - (nb*@sizeOf(T)) % 4) % 4);
+pub fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4) T {
+    var aligned_size = (nb * @sizeOf(T)) + ((4 - (nb * @sizeOf(T)) % 4) % 4);
 
     var header: *PageMallocHeader = page;
     while ((header.is_free == false) or (header.size < aligned_size)) {

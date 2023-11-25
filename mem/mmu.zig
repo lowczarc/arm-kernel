@@ -94,15 +94,18 @@ const VAddr = packed struct {
     first: u2,
 };
 
-var TTB_L1 align(4096) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
+var TTB_L1 align(pages.PAGE_SIZE) = [4]TTBNode{ TTBNode{}, TTBNode{}, TTBNode{}, TTBNode{} };
+
+pub const TTBNodeTable = *align(pages.PAGE_SIZE)[512]TTBNode;
+const TTBLeafTable = *align(pages.PAGE_SIZE)[512]TTBLeaf;
 
 // We don't have a way to deallocate properly, the pages also need to be aligned
 // properly and thus cannot be made with kmalloc. Will need to implement a way
 // for kmalloc and kfree to manage alignment.
 // Also, we should find a smart way to count the children of a Node/Leaf and
 // deallocate if it is 0 without having to iterate over the 1024 children.
-pub fn allocate_TTB_l2() [*]TTBNode {
-    var TTB_node = pages.kpalloc([*]TTBNode);
+pub fn allocate_TTB_l2() TTBNodeTable {
+    var TTB_node = pages.kpalloc(TTBNodeTable);
 
     return TTB_node;
 }
@@ -116,74 +119,66 @@ pub const MMAP_OPTS = struct {
     xn: bool = true,
 };
 
-pub fn as_phys(arg: anytype) u20 {
-    if (@TypeOf(arg) == u20) {
-        return arg;
-    }
-
-    if (@TypeOf(arg) == u32 or @TypeOf(arg) == usize) {
-        return @intCast(arg >> 12);
-    }
-
-    if (@typeInfo(@TypeOf(arg)) == .Pointer) {
-        return @intCast(@intFromPtr(arg) >> 12);
-    }
-
-    @compileError("Unable to convert type '" ++ @typeName(@TypeOf(arg)) ++ "' to ph_addr. Supported types are u20, u32 and pointers.");
+fn from_phys(arg: pages.PhysAddrRange) u20 {
+    return @intCast(@intFromPtr(arg) >> 12);
 }
 
-pub fn mmap_TTB_l2(l2: [*]TTBNode, ph_addr: anytype, addr: u18, opts: MMAP_OPTS) void {
+fn as_table(comptime T: type, arg: u20) pages.align_to_page(T) {
+    return @ptrFromInt(@as(u32, arg) << 12);
+}
+
+pub fn mmap_TTB_l2(l2: TTBNodeTable, ph_addr: pages.PhysAddrRange, addr: u18, opts: MMAP_OPTS) void {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
-    var l3: [*]TTBLeaf = undefined;
+    var l3: TTBLeafTable = undefined;
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
-        l3 = pages.kpalloc([*]TTBLeaf);
-        l2[vaddr.part2].next_level_table_address = as_phys(l3);
+        l3 = pages.kpalloc(TTBLeafTable);
+        l2[vaddr.part2].next_level_table_address = from_phys(l3);
         l2[vaddr.part2].pageStatus = PageStatus.Page;
     } else {
-        l3 = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
+        l3 = as_table(TTBLeafTable, l2[vaddr.part2].next_level_table_address);
     }
 
-    l3[vaddr.part3].output_address = as_phys(ph_addr);
+    l3[vaddr.part3].output_address = from_phys(ph_addr);
     l3[vaddr.part3].af = true;
     l3[vaddr.part3].ap = opts.ap;
     l3[vaddr.part3].xn = opts.xn;
     l3[vaddr.part3].pageStatus = PageStatus.Page;
 }
 
-pub fn get_mmap_ph_addr_TTB_l2(l2: [*]TTBNode, addr: u18) u32 {
+pub fn get_mmap_ph_addr_TTB_l2(l2: TTBNodeTable, addr: u18) u32 {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         @panic("This address is not registered");
     }
 
-    var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
+    var l3 = as_table(TTBLeafTable, l2[vaddr.part2].next_level_table_address);
 
     return l3[vaddr.part3].output_address;
 }
 
-pub fn remove_mmap_TTB_l2(l2: [*]TTBNode, addr: u18) void {
+pub fn remove_mmap_TTB_l2(l2: TTBNodeTable, addr: u18) void {
     var vaddr: VAddrLvl2 = @bitCast(addr);
 
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         return;
     }
 
-    var l3: [*]TTBLeaf = @ptrFromInt(@as(u32, l2[vaddr.part2].next_level_table_address) << 12);
+    var l3: TTBLeafTable = as_table(TTBLeafTable, l2[vaddr.part2].next_level_table_address);
 
     l3[vaddr.part3].pageStatus = PageStatus.Inactive;
 }
 
-pub fn register_l2(l2: [*]TTBNode, l1_range: u2) void {
-    TTB_L1[l1_range].next_level_table_address = as_phys(l2);
+pub fn register_l2(l2: TTBNodeTable, l1_range: u2) void {
+    TTB_L1[l1_range].next_level_table_address = from_phys(l2);
     TTB_L1[l1_range].pageStatus = PageStatus.Page;
 }
 
 const TTBR0 = packed struct {
     _padding_1: u24 = 0,
     _padding_2: u8 = 0,
-    BADDR: u32,
+    BADDR: *align(4096)[4]TTBNode,
 };
 
 const Split = packed struct {
@@ -221,19 +216,19 @@ pub fn init() void {
     var kernel_TTB_l2 = allocate_TTB_l2();
 
     for (0x00000..0x3c000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @as(u20, @intCast(i)), @as(u18, @intCast(i)), MMAP_OPTS{ .xn = false });
+        mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{ .xn = false });
     }
 
     // MMIO is supposed to start at 0x3f000000 but it seems the frambuffer is
     // allocated on 0x3cXXXXXX
     for (0x3c000..0x40000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @as(u20, @intCast(i)), @as(u18, @intCast(i)), MMAP_OPTS{});
+        mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{});
     }
 
     register_l2(kernel_TTB_l2, 0);
 
     set_ttbcr(0x80000000);
-    set_ttbr0(TTBR0{ .BADDR = @intCast(@intFromPtr(&TTB_L1)) });
+    set_ttbr0(TTBR0{ .BADDR = &TTB_L1 });
 
     print.println(.{"Activating MMU..."});
 
