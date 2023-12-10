@@ -1,10 +1,12 @@
 const SYS_RESTART = 0x0;
 const SYS_EXIT = 0x1;
+const SYS_FORK = 0x2;
 const SYS_READ = 0x3;
 const SYS_WRITE = 0x4;
 const SYS_OPEN = 0x5;
 const SYS_CLOSE = 0x6;
 const SYS_DBG = 0x7;
+const SYS_GETPID = 0x14;
 const SYS_BRK = 0x2d;
 
 fn syscall0(number: usize) usize {
@@ -67,4 +69,12 @@ pub fn open(buf: [*]const u8) u8 {
 
 pub fn brk(data_end: usize) usize {
     return syscall1(SYS_BRK, data_end);
+}
+
+pub fn fork() u32 {
+    return syscall0(SYS_FORK);
+}
+
+pub fn get_pid() u32 {
+    return syscall0(SYS_GETPID);
 }

@@ -4,12 +4,13 @@ OBJCOPY = arm-none-eabi-objcopy
 ZIG_TARGET = arm-freestanding-eabihf
 MCPU = cortex-a7
 QEMU=qemu-system-arm
+#QEMU=/home/lancelot/Temp/qemu/build/qemu-system-arm
 QEMU_MACHINE=raspi2b
 
 all: init.bin
 
 startup.o: startup.s
-	@$(AS) -mcpu=$(MCPU) -g startup.s -o startup.o
+	@$(AS) -mcpu=$(MCPU) startup.s -o startup.o
 
 MCPU_ZIG = $(subst -,_,$(MCPU))
 
@@ -39,6 +40,9 @@ clean:
 
 qemu:
 	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin -device sd-card,drive=sdport -drive id=sdport,if=none,format=raw,file=assets/sdcard
+
+qemu-no-sd:
+	@$(QEMU) -M $(QEMU_MACHINE) -nographic -semihosting -kernel init.bin
 
 qemu-screen:
 	@$(QEMU) -M $(QEMU_MACHINE) -serial /dev/stdout -semihosting -kernel init.bin

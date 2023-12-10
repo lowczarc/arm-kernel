@@ -9,11 +9,13 @@ const mmu = @import("../mem/mmu.zig");
 
 const SYS_RESTART = 0x0;
 const SYS_EXIT = 0x1;
+const SYS_FORK = 0x2;
 const SYS_READ = 0x3;
 const SYS_WRITE = 0x4;
 const SYS_OPEN = 0x5;
 const SYS_CLOSE = 0x6;
 const SYS_DBG = 0x7;
+const SYS_GETPID = 0x14;
 const SYS_BRK = 0x2d;
 
 comptime {
@@ -53,8 +55,7 @@ comptime {
         // lr
         \\      stm r0!, {lr}
         \\      pop {r0}
-        \\      bl syscall_handler
-        \\      b __load_registers
+        \\      b syscall_handler
     );
 }
 
@@ -139,6 +140,17 @@ pub fn close(fd: u8) usize {
     return 0;
 }
 
+pub fn get_pid() u32 {
+    return process.curr_proc.pid;
+}
+
+pub fn fork() u32 {
+    var new_proc = process.fork(process.curr_proc);
+
+    new_proc.regs.r0 = new_proc.pid;
+    return new_proc.pid;
+}
+
 pub fn brk(data_end: usize) usize {
     if ((data_end < 0x40000000) or (data_end > 0x80000000)) {
         return 0x40000000 + process.curr_proc.data_pages * pages.PAGE_SIZE;
@@ -173,17 +185,16 @@ pub fn brk(data_end: usize) usize {
 
 export fn syscall_handler(r0: u32) void {
     process.curr_proc.regs.r0 = r0;
-    // The syscall number has been store previously in r7
-    const num = asm volatile (""
-        : [ret] "={r7}" (-> usize),
-    );
 
-    const result = switch (num) {
+    // The syscall number has been store previously in r7
+    const result = switch (process.curr_proc.regs.r7) {
         SYS_RESTART => asm volatile ("b _Reset"
             : [ret] "=r" (-> usize),
         ),
         SYS_EXIT => exit(),
         SYS_DBG => dbg(),
+        SYS_FORK => fork(),
+        SYS_GETPID => get_pid(),
         SYS_OPEN => @as(usize, open(@ptrFromInt(process.curr_proc.regs.r0))),
         SYS_WRITE => write(@intCast(process.curr_proc.regs.r0), @ptrFromInt(process.curr_proc.regs.r1), process.curr_proc.regs.r2),
         SYS_READ => read(@intCast(process.curr_proc.regs.r0), @ptrFromInt(process.curr_proc.regs.r1), process.curr_proc.regs.r2),
@@ -193,6 +204,8 @@ export fn syscall_handler(r0: u32) void {
     };
 
     process.curr_proc.regs.r0 = result;
+
+    process.context_switch(process.curr_proc.next);
 }
 
 const SWI: *u32 = @ptrFromInt(0x8);

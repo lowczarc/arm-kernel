@@ -8,6 +8,7 @@ const RESP1: *volatile u32 = @ptrFromInt(BASE + 0x14);
 const RESP2: *volatile u32 = @ptrFromInt(BASE + 0x18);
 const RESP3: *volatile u32 = @ptrFromInt(BASE + 0x1c);
 const STATUS: *volatile Status = @ptrFromInt(BASE + 0x24);
+const CONTROL1: *volatile u32 = @ptrFromInt(BASE + 0x2c);
 const INTERRUPT: *volatile u32 = @ptrFromInt(BASE + 0x30);
 
 const Status = packed struct {
@@ -73,13 +74,18 @@ const Command = packed struct {
     cmd_index: u6,
 
     _padding4: u2 = 0,
+
+
 };
 
 pub fn read() usize {
+    // Not sure why but CONTROL1 & 7 needs to be 7. This has something to do with
+    // the sd driver internal clock ?
+    CONTROL1.* = 7;
     print.println(.{ INTERRUPT.* });
 
     CMDTM.* = Command {
-        .cmd_index = 41,
+        .cmd_index = 1,
     };
 
     print.println(.{ INTERRUPT.* });

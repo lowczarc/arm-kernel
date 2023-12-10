@@ -17,3 +17,10 @@ export fn __aeabi_memcpy(dest: [*]u8, src: [*]u8, n: usize) [*]u8 {
     }
     return dest;
 }
+
+export fn __aeabi_memcpy4(dest: [*]u8, src: [*]u8, n: usize) [*]u8 {
+    for (0..n) |i| {
+        dest[i] = src[i];
+    }
+    return dest;
+}

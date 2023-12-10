@@ -50,16 +50,36 @@ const PageMallocHeader = struct {
     prev: ?*PageMallocHeader,
 };
 
-fn allocate_page() *Page {
+fn allocate_unintialized_page() *Page {
     var page = free_pages.?;
     free_pages = page.next;
     page.allocated = true;
     page.next = undefined;
+
+    return page;
+}
+
+fn allocate_page() *Page {
+    var page = allocate_unintialized_page();
+
     var ptr: [*]u8 = @ptrCast(page.addr);
     for (0..PAGE_SIZE) |i| {
         ptr[i] = 0;
     }
+
     return page;
+}
+
+pub fn clone_page(page: *Page) *Page {
+    var new_page = allocate_unintialized_page();
+
+    var src: [*]u8 = @ptrCast(page.addr);
+    var dest: [*]u8 = @ptrCast(new_page.addr);
+    for (0..PAGE_SIZE) |i| {
+        dest[i] = src[i];
+    }
+
+    return new_page;
 }
 
 pub fn align_to_page(comptime T: type) type {
@@ -102,9 +122,12 @@ pub fn get_page_of(p: anytype) *Page {
         page_nb = @intCast(p >> PAGE_SIZE_SHIFT);
     } else if (@TypeOf(p) == u20) {
         page_nb = @intCast(p);
-    } else if (@typeInfo(@TypeOf(p)) != .Pointer and @typeInfo(@TypeOf(p)) != .Array) {
+    } else if (@typeInfo(@TypeOf(p)) == .Pointer or @typeInfo(@TypeOf(p)) == .Array) {
         page_nb = @intCast(@intFromPtr(p) >> PAGE_SIZE_SHIFT);
+    } else {
+        @panic("Unknown type in get_page_of");
     }
+
 
     return &all_pages[page_nb];
 }

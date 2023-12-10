@@ -51,13 +51,16 @@ const FileDescriptor = struct {
 
 const Process = extern struct {
     regs: Regs = Regs{},
-    stack_page: ?*pages.Page = null,
     TTB_l2: mmu.TTBNodeTable = undefined,
     fds: [256]?*FileDescriptor = undefined,
     data_pages: u32,
+    pid: u32,
+    next: *Process,
 };
 
 pub export var curr_proc: *Process = undefined;
+
+pub var pid_seq: u32 = 1;
 
 pub fn register_file_descriptor(proc: *Process, char_device: *const device.CharDevice) u8 {
     for (0..proc.fds.len) |i| {
@@ -104,8 +107,8 @@ fn new_process(prog: anytype) *Process {
 
     copy_process_prog_memory(proc, prog);
 
-    proc.stack_page = pages.get_page_of(pages.kpalloc(*anyopaque));
-    mmu.mmap_TTB_l2(proc.TTB_l2, proc.stack_page.?.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = mmu.AP.RW_All, .xn = false });
+    var stack_page = pages.get_page_of(pages.kpalloc(*anyopaque));
+    mmu.mmap_TTB_l2(proc.TTB_l2, stack_page.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = mmu.AP.RW_All, .xn = false });
 
     proc.regs.sp = 0x7ffffffc;
 
@@ -113,12 +116,61 @@ fn new_process(prog: anytype) *Process {
         : [ret] "={r1}" (-> u32),
     ) & 0xfffffff0;
 
+    proc.next = proc;
+
+    proc.pid = pid_seq;
+
+    pid_seq += 1;
+
     return proc;
 }
 
-fn context_switch(proc: *Process) noreturn {
+pub fn fork(proc: *Process) *Process {
+    var new_proc: *Process = &pages.kmalloc(Process, 1)[0];
+
+    new_proc.* = proc.*;
+
+    proc.next = new_proc;
+
+    new_proc.pid = pid_seq;
+
+    new_proc.TTB_l2 = mmu.clone_TTB_l2(proc.TTB_l2);
+
+    pid_seq += 1;
+
+    return new_proc;
+}
+
+var context_switch_seq: u32 = 0;
+
+pub fn context_switch(proc: *Process) noreturn {
     curr_proc = proc;
+
     mmu.register_l2(proc.TTB_l2, 1);
+
+    asm volatile (
+        // CONTEXTIDR
+        // This is supposed to be unique per process. probably not useful for now
+        // since we invalidate all the TLBs everytime anyway but it can be used to
+        // keep multiple different cache of the translation table for each process
+        \\ MCR p15,0,r0,c13,c0,1
+        \\ dsb
+
+        // Invalidate all TLBs
+        \\ MCR p15,0,r0,c8,c7,0
+        \\ MCR p15,0,r0,c8,c6,0
+        \\ MCR p15,0,r0,c8,c5,0
+        \\ MCR p15,0,r0,c8,c3,0
+
+        // BPIALL (Invalidation of branching predictions)
+        \\ MCR p15, 0, r0, c7, c5, 6
+        \\ dsb
+        \\ isb
+        //
+        :
+        : [arg1] "{r0}" (context_switch_seq),
+    );
+    context_switch_seq += 1;
 
     asm volatile ("b __load_registers");
     unreachable;

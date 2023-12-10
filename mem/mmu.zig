@@ -70,7 +70,9 @@ const TTBLeaf = packed struct {
     // Access flag, if not true we get a data access fault.
     af: bool,
 
-    _should_be_zero_1: u1,
+    // Not global, this has an effect on translation table caching
+    // Should be true for userspace memory and false for kernelspace memory
+    nG: bool,
 
     output_address: u20,
 
@@ -117,6 +119,8 @@ pub const MMAP_OPTS = struct {
 
     // By default non executable (xn = eXecute Never)
     xn: bool = true,
+
+    nG: bool = true,
 };
 
 fn from_phys(arg: pages.PhysAddrRange) u20 {
@@ -143,6 +147,7 @@ pub fn mmap_TTB_l2(l2: TTBNodeTable, ph_addr: pages.PhysAddrRange, addr: u18, op
     l3[vaddr.part3].af = true;
     l3[vaddr.part3].ap = opts.ap;
     l3[vaddr.part3].xn = opts.xn;
+    l3[vaddr.part3].nG = opts.nG;
     l3[vaddr.part3].pageStatus = PageStatus.Page;
 }
 
@@ -216,13 +221,13 @@ pub fn init() void {
     var kernel_TTB_l2 = allocate_TTB_l2();
 
     for (0x00000..0x3c000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{ .xn = false });
+        mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{ .xn = false, .nG = false });
     }
 
     // MMIO is supposed to start at 0x3f000000 but it seems the frambuffer is
     // allocated on 0x3cXXXXXX
     for (0x3c000..0x40000) |i| {
-        mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{});
+        mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{ .nG = false });
     }
 
     register_l2(kernel_TTB_l2, 0);
@@ -235,4 +240,29 @@ pub fn init() void {
     activate_mmu();
 
     print.println(.{"MMU activated"});
+}
+
+pub fn clone_TTB_l2(src: TTBNodeTable) TTBNodeTable {
+    var dest = allocate_TTB_l2();
+
+    for (src, 0..) |page_l2, i| {
+        const is_l2_active = page_l2.pageStatus != PageStatus.Inactive;
+        if (is_l2_active) {
+            var l3 = as_table(TTBLeafTable, page_l2.next_level_table_address);
+            for (l3, 0..) |page_l3, j| {
+                const is_l3_active = page_l3.pageStatus != PageStatus.Inactive;
+                if (is_l3_active) {
+                    const vaddr: u18 = @intCast((i << 9) | j);
+
+                    var old_page = pages.get_page_of(page_l3.output_address);
+
+                    var new_page = pages.clone_page(old_page);
+
+                    mmap_TTB_l2(dest, new_page.addr, vaddr, MMAP_OPTS{ .xn = page_l3.xn, .ap = page_l3.ap });
+                }
+            }
+        }
+    }
+
+    return dest;
 }

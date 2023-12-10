@@ -19,10 +19,10 @@ Features:
 [x] brk syscall, malloc/free in userspace
 [x] Framebuffer Read/Write
 [x] Virtual TTY with a home-made font :)
-[x] Processes
 [ ] Keyboard
 [ ] File system
-[ ] Multiple processes running at the same time, context switching
+[x] Multiple processes running at the same time, context switching
+[ ] Non system-blocking syscalls
 [ ] Pipe
 [ ] Userspace shell
 ... Maybe more, don't know yet
