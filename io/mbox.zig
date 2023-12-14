@@ -17,13 +17,7 @@ pub fn read(ch: u8) u32 {
     var data: u32 = 0;
 
     while (true) {
-        // The next line is the equivalent of:
-        // while (MBOX_STATUS.* & MBOX_EMPTY != 0) {}
-        // I had to write it like this due to this issue in the Zig compiler: https://github.com/ziglang/zig/issues/17999
-        while (asm volatile ("ldr r0, [r0]"
-            : [ret] "={r0}" (-> u32),
-            : [arg] "{r0}" (MBOX_STATUS),
-        ) & MBOX_EMPTY != 0) {}
+        while (MBOX_STATUS.* & MBOX_EMPTY != 0) {}
         data = MBOX_READ.*;
         if (data & 0xF == ch) {
             break;

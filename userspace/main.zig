@@ -28,18 +28,18 @@ pub fn printx(fd: u8, x: u32) void {
 // In the future it will be loaded from the filesystem instead and this will be
 // removed (or maybe moved to an example dir)
 export fn main() void {
-    var fd = syscalls.open("/dev/uart");
+    const fd = syscalls.open("/dev/uart");
 
-    var b = malloc.malloc(1);
+    const b = malloc.malloc(1);
 
     const hw = "Hello world!\n\n";
     _ = syscalls.write(fd, hw, @sizeOf(@TypeOf(hw.*)));
 
-    var parent_pid = syscalls.get_pid();
+    const parent_pid = syscalls.get_pid();
 
     printx(fd, parent_pid);
 
-    var child_pid = syscalls.fork();
+    const child_pid = syscalls.fork();
 
 
     while (true) {

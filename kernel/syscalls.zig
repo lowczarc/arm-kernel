@@ -156,7 +156,7 @@ pub fn brk(data_end: usize) usize {
         return 0x40000000 + process.curr_proc.data_pages * pages.PAGE_SIZE;
     }
 
-    var new_data_pages = 1 + ((data_end - 0x40000000 - 1) / pages.PAGE_SIZE);
+    const new_data_pages = 1 + ((data_end - 0x40000000 - 1) / pages.PAGE_SIZE);
 
     if (new_data_pages > process.curr_proc.data_pages) {
         // We allocate new memory

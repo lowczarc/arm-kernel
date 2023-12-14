@@ -34,7 +34,9 @@ export fn init(r0: u32, r1: u32, r2: u32) void {
     atags.init(r2);
     pages.init();
     mmu.init();
+
     display.init();
+
     syscalls.init();
 
     print.println(.{emmc.read()});

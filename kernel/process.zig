@@ -79,7 +79,7 @@ pub fn register_file_descriptor(proc: *Process, char_device: *const device.CharD
 
 fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
     if ((@typeInfo(@TypeOf(prog)) == .Array) and (@typeInfo(@TypeOf(prog)).Array.child == u8)) {
-        var needed_pages = (prog.len + pages.PAGE_SIZE - 1) / pages.PAGE_SIZE;
+        const needed_pages = (prog.len + pages.PAGE_SIZE - 1) / pages.PAGE_SIZE;
         for (0..needed_pages) |page_nb| {
             var current_page = pages.kpalloc([*]u8);
 
@@ -107,7 +107,7 @@ fn new_process(prog: anytype) *Process {
 
     copy_process_prog_memory(proc, prog);
 
-    var stack_page = pages.get_page_of(pages.kpalloc(*anyopaque));
+    const stack_page = pages.get_page_of(pages.kpalloc(*anyopaque));
     mmu.mmap_TTB_l2(proc.TTB_l2, stack_page.addr, 0x3ffff, mmu.MMAP_OPTS{ .ap = mmu.AP.RW_All, .xn = false });
 
     proc.regs.sp = 0x7ffffffc;
@@ -149,10 +149,10 @@ pub fn context_switch(proc: *Process) noreturn {
     mmu.register_l2(proc.TTB_l2, 1);
 
     asm volatile (
-        // CONTEXTIDR
-        // This is supposed to be unique per process. probably not useful for now
-        // since we invalidate all the TLBs everytime anyway but it can be used to
-        // keep multiple different cache of the translation table for each process
+    // CONTEXTIDR
+    // This is supposed to be unique per process. probably not useful for now
+    // since we invalidate all the TLBs everytime anyway but it can be used to
+    // keep multiple different cache of the translation table for each process
         \\ MCR p15,0,r0,c13,c0,1
         \\ dsb
 
@@ -166,7 +166,6 @@ pub fn context_switch(proc: *Process) noreturn {
         \\ MCR p15, 0, r0, c7, c5, 6
         \\ dsb
         \\ isb
-        //
         :
         : [arg1] "{r0}" (context_switch_seq),
     );

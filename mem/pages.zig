@@ -18,13 +18,13 @@ var free_pages: ?*Page = null;
 extern const __end: *usize;
 
 pub fn init() void {
-    var num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
-    var all_pages_size = num_pages * @sizeOf(Page);
+    const num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
+    const all_pages_size = num_pages * @sizeOf(Page);
 
     all_pages = @ptrCast(&__end);
 
-    var kernel_pages = (@intFromPtr(&__end) >> PAGE_SIZE_SHIFT);
-    var page_medata_size = (all_pages_size >> PAGE_SIZE_SHIFT) + 1; // we add one just to be sure
+    const kernel_pages = (@intFromPtr(&__end) >> PAGE_SIZE_SHIFT);
+    const page_medata_size = (all_pages_size >> PAGE_SIZE_SHIFT) + 1; // we add one just to be sure
 
     for (0..(kernel_pages + page_medata_size)) |i| {
         var page = &all_pages[i];
@@ -60,7 +60,7 @@ fn allocate_unintialized_page() *Page {
 }
 
 fn allocate_page() *Page {
-    var page = allocate_unintialized_page();
+    const page = allocate_unintialized_page();
 
     var ptr: [*]u8 = @ptrCast(page.addr);
     for (0..PAGE_SIZE) |i| {
@@ -71,9 +71,9 @@ fn allocate_page() *Page {
 }
 
 pub fn clone_page(page: *Page) *Page {
-    var new_page = allocate_unintialized_page();
+    const new_page = allocate_unintialized_page();
 
-    var src: [*]u8 = @ptrCast(page.addr);
+    const src: [*]u8 = @ptrCast(page.addr);
     var dest: [*]u8 = @ptrCast(new_page.addr);
     for (0..PAGE_SIZE) |i| {
         dest[i] = src[i];
@@ -141,7 +141,7 @@ pub fn kpfree(p: anytype) void {
 }
 
 fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4)T {
-    var aligned_size = (nb * @sizeOf(T)) + ((4 - (nb * @sizeOf(T)) % 4) % 4);
+    const aligned_size = (nb * @sizeOf(T)) + ((4 - (nb * @sizeOf(T)) % 4) % 4);
 
     var header: *PageMallocHeader = page;
     while ((header.is_free == false) or (header.size < aligned_size)) {
@@ -178,7 +178,7 @@ fn kfree_in_page(ptr: *u8) *PageMallocHeader {
     var header: *PageMallocHeader = @ptrFromInt(@intFromPtr(ptr) - @sizeOf(PageMallocHeader));
     header.is_free = true;
     if (header.next != null and header.next.?.is_free and same_page(header, header.next.?)) {
-        var next_header = header.next.?;
+        const next_header = header.next.?;
         header.next = next_header.next;
         header.size = header.size + @sizeOf(PageMallocHeader) + next_header.size;
     }

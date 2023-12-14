@@ -2,10 +2,16 @@ AS = arm-none-eabi-as
 LD = arm-none-eabi-ld
 OBJCOPY = arm-none-eabi-objcopy
 ZIG_TARGET = arm-freestanding-eabihf
+ZIG_VERSION = $(shell zig version | awk -F'.' '{ print $$1"."$$2 }')
 MCPU = cortex-a7
 QEMU=qemu-system-arm
 #QEMU=/home/lancelot/Temp/qemu/build/qemu-system-arm
 QEMU_MACHINE=raspi2b
+
+REQUIRED_ZIG_VERSION=0.12
+ifneq "$(ZIG_VERSION)" "$(REQUIRED_ZIG_VERSION)"
+$(error Unsupported zig version. Requires ^${REQUIRED_ZIG_VERSION}.0-dev. Found "${ZIG_VERSION}")
+endif
 
 all: init.bin
 

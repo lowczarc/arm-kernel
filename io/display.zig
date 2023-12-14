@@ -1,5 +1,6 @@
 const mbox = @import("./mbox.zig");
 const print = @import("../lib/print.zig");
+const pages = @import("../mem/pages.zig");
 
 const HEIGHT = 480;
 const WIDTH = 640;
@@ -45,7 +46,9 @@ pub fn init() void {
 
     response = mbox.read(8);
 
-    FRAME = Frame{ .height = HEIGHT, .width = WIDTH, .buffer = @ptrFromInt(REQUEST_DB_MSG[5]) };
+    FRAME.height = HEIGHT;
+    FRAME.width = WIDTH;
+    FRAME.buffer = @ptrFromInt(REQUEST_DB_MSG[5]);
 
     for (0..(FRAME.width * FRAME.height)) |i| {
         FRAME.buffer[i].red = 0x10;

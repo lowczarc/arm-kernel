@@ -41,7 +41,7 @@ const Command = packed struct {
     tm_blkcnt_en: bool = false,
 
     // Used to send a CMD12 (Stop) with 0b01 or CMD23 (Idk) with 0b10 automatically
-    // after a data transfer. 0b00 ignores and 0b11 is reserved. 
+    // after a data transfer. 0b00 ignores and 0b11 is reserved.
     tm_auto_cmd_en: u2 = 0,
 
     // true = data transfer from card to host
@@ -74,21 +74,19 @@ const Command = packed struct {
     cmd_index: u6,
 
     _padding4: u2 = 0,
-
-
 };
 
 pub fn read() usize {
     // Not sure why but CONTROL1 & 7 needs to be 7. This has something to do with
     // the sd driver internal clock ?
     CONTROL1.* = 7;
-    print.println(.{ INTERRUPT.* });
+    print.println(.{INTERRUPT.*});
 
-    CMDTM.* = Command {
+    CMDTM.* = Command{
         .cmd_index = 1,
     };
 
-    print.println(.{ INTERRUPT.* });
+    print.println(.{INTERRUPT.*});
 
     var resp0: u32 = RESP0.*;
     var resp1: u32 = RESP1.*;
@@ -99,9 +97,9 @@ pub fn read() usize {
     resp1 = RESP1.*;
     resp2 = RESP2.*;
     resp3 = RESP3.*;
-    print.println(.{"resp0: ", resp0, "resp1: ", resp1, "resp2: ", resp2, "resp3: ", resp3 });
+    print.println(.{ "resp0: ", resp0, "resp1: ", resp1, "resp2: ", resp2, "resp3: ", resp3 });
 
-    var status: Status = @bitCast(@as(u32, 0));
+    const status: Status = @bitCast(@as(u32, 0));
 
     print.println(.{ "cmd_inhibit: ", status.cmd_inhibit });
 

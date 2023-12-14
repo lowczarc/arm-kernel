@@ -107,7 +107,7 @@ const TTBLeafTable = *align(pages.PAGE_SIZE) [512]TTBLeaf;
 // Also, we should find a smart way to count the children of a Node/Leaf and
 // deallocate if it is 0 without having to iterate over the 1024 children.
 pub fn allocate_TTB_l2() TTBNodeTable {
-    var TTB_node = pages.kpalloc(TTBNodeTable);
+    const TTB_node = pages.kpalloc(TTBNodeTable);
 
     return TTB_node;
 }
@@ -132,7 +132,7 @@ fn as_table(comptime T: type, arg: u20) pages.align_to_page(T) {
 }
 
 pub fn mmap_TTB_l2(l2: TTBNodeTable, ph_addr: pages.PhysAddrRange, addr: u18, opts: MMAP_OPTS) void {
-    var vaddr: VAddrLvl2 = @bitCast(addr);
+    const vaddr: VAddrLvl2 = @bitCast(addr);
 
     var l3: TTBLeafTable = undefined;
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
@@ -152,19 +152,19 @@ pub fn mmap_TTB_l2(l2: TTBNodeTable, ph_addr: pages.PhysAddrRange, addr: u18, op
 }
 
 pub fn get_mmap_ph_addr_TTB_l2(l2: TTBNodeTable, addr: u18) u32 {
-    var vaddr: VAddrLvl2 = @bitCast(addr);
+    const vaddr: VAddrLvl2 = @bitCast(addr);
 
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         @panic("This address is not registered");
     }
 
-    var l3 = as_table(TTBLeafTable, l2[vaddr.part2].next_level_table_address);
+    const l3 = as_table(TTBLeafTable, l2[vaddr.part2].next_level_table_address);
 
     return l3[vaddr.part3].output_address;
 }
 
 pub fn remove_mmap_TTB_l2(l2: TTBNodeTable, addr: u18) void {
-    var vaddr: VAddrLvl2 = @bitCast(addr);
+    const vaddr: VAddrLvl2 = @bitCast(addr);
 
     if (l2[vaddr.part2].pageStatus != PageStatus.Page) {
         return;
@@ -218,7 +218,7 @@ fn activate_mmu() void {
 }
 
 pub fn init() void {
-    var kernel_TTB_l2 = allocate_TTB_l2();
+    const kernel_TTB_l2 = allocate_TTB_l2();
 
     for (0x00000..0x3c000) |i| {
         mmap_TTB_l2(kernel_TTB_l2, @ptrFromInt(i << 12), @intCast(i), MMAP_OPTS{ .xn = false, .nG = false });
@@ -243,20 +243,20 @@ pub fn init() void {
 }
 
 pub fn clone_TTB_l2(src: TTBNodeTable) TTBNodeTable {
-    var dest = allocate_TTB_l2();
+    const dest = allocate_TTB_l2();
 
     for (src, 0..) |page_l2, i| {
         const is_l2_active = page_l2.pageStatus != PageStatus.Inactive;
         if (is_l2_active) {
-            var l3 = as_table(TTBLeafTable, page_l2.next_level_table_address);
+            const l3 = as_table(TTBLeafTable, page_l2.next_level_table_address);
             for (l3, 0..) |page_l3, j| {
                 const is_l3_active = page_l3.pageStatus != PageStatus.Inactive;
                 if (is_l3_active) {
                     const vaddr: u18 = @intCast((i << 9) | j);
 
-                    var old_page = pages.get_page_of(page_l3.output_address);
+                    const old_page = pages.get_page_of(page_l3.output_address);
 
-                    var new_page = pages.clone_page(old_page);
+                    const new_page = pages.clone_page(old_page);
 
                     mmap_TTB_l2(dest, new_page.addr, vaddr, MMAP_OPTS{ .xn = page_l3.xn, .ap = page_l3.ap });
                 }

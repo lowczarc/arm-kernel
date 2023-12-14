@@ -12,12 +12,12 @@ var heap: ?*MallocHeader = null;
 pub fn malloc(size: u32) [*]u8 {
     const aligned_size = size + ((4 - size % 4) % 4);
     var walker: *?*MallocHeader = &heap;
-    var previous: ?*MallocHeader = null;
+    const previous: ?*MallocHeader = null;
 
     while (true) {
         if (walker.* == null) {
-            var data_end = syscalls.brk(0);
-            var new_data_end = syscalls.brk(data_end + aligned_size + @sizeOf(MallocHeader));
+            const data_end = syscalls.brk(0);
+            const new_data_end = syscalls.brk(data_end + aligned_size + @sizeOf(MallocHeader));
 
             walker.* = @ptrFromInt(data_end);
             walker.*.?.size = new_data_end - data_end - @sizeOf(MallocHeader);
@@ -63,7 +63,7 @@ pub fn free(ptr: *u8) void {
     }
 
     if (header.next == null) {
-        var new_data_end = syscalls.brk(@intFromPtr(header));
+        const new_data_end = syscalls.brk(@intFromPtr(header));
 
         if (new_data_end > @intFromPtr(header) + @sizeOf(MallocHeader)) {
             header.size = new_data_end - @sizeOf(MallocHeader) - @intFromPtr(header);

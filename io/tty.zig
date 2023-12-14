@@ -6,17 +6,17 @@ const pages = @import("../mem/pages.zig");
 const TTYSize = struct { x: usize, y: usize, chars: usize };
 
 pub fn get_tty_sizes() TTYSize {
-    var x = display.FRAME.width / 8;
-    var y = display.FRAME.height * 8;
-    var chars = x * y;
+    const x = display.FRAME.width / 8;
+    const y = display.FRAME.height * 8;
+    const chars = x * y;
 
     return TTYSize{ .x = x, .y = y, .chars = chars };
 }
 
 fn print_char(char: u8, x: u16, y: u16) void {
     var font = @embedFile("../assets/font.bin");
-    var char_pos: u32 = @intCast(char);
-    var glyph = font[8 * char_pos .. 8 * (char_pos + 1)];
+    const char_pos: u32 = @intCast(char);
+    const glyph = font[8 * char_pos .. 8 * (char_pos + 1)];
 
     for (0..8) |i| {
         for (0..8) |j| {

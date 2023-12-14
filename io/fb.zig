@@ -16,7 +16,7 @@ fn open() *device.Userinfos {
 
 fn read(user_infos: *device.Userinfos, buf: [*]u8, size: usize) u32 {
     const readable_size = @min(size, (get_fb_size() - user_infos.offset));
-    var fb: [*]u8 = @ptrCast(display.FRAME.buffer);
+    const fb: [*]u8 = @ptrCast(display.FRAME.buffer);
 
     for (0..readable_size) |i| {
         buf[i] = fb[i + user_infos.offset];
