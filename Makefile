@@ -10,7 +10,7 @@ QEMU_MACHINE=raspi2b
 
 REQUIRED_ZIG_VERSION=0.12
 ifneq "$(ZIG_VERSION)" "$(REQUIRED_ZIG_VERSION)"
-$(error Unsupported zig version. Requires ^${REQUIRED_ZIG_VERSION}.0-dev. Found "${ZIG_VERSION}")
+$(error Unsupported zig version. Requires ^${REQUIRED_ZIG_VERSION}.x. Found "${ZIG_VERSION}")
 endif
 
 all: init.bin

@@ -21,7 +21,7 @@ pub fn init() void {
     const num_pages = (atags.ATAG.Mem.?.Size >> PAGE_SIZE_SHIFT);
     const all_pages_size = num_pages * @sizeOf(Page);
 
-    all_pages = @ptrCast(&__end);
+    all_pages = @ptrCast(@constCast(&__end));
 
     const kernel_pages = (@intFromPtr(&__end) >> PAGE_SIZE_SHIFT);
     const page_medata_size = (all_pages_size >> PAGE_SIZE_SHIFT) + 1; // we add one just to be sure
@@ -128,7 +128,6 @@ pub fn get_page_of(p: anytype) *Page {
         @panic("Unknown type in get_page_of");
     }
 
-
     return &all_pages[page_nb];
 }
 
@@ -140,7 +139,7 @@ pub fn kpfree(p: anytype) void {
     free_page(get_page_of(@intFromPtr(p)));
 }
 
-fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4)T {
+fn kmalloc_in_page(comptime T: type, page: *align(PAGE_SIZE) PageMallocHeader, nb: usize) ?[*]align(4) T {
     const aligned_size = (nb * @sizeOf(T)) + ((4 - (nb * @sizeOf(T)) % 4) % 4);
 
     var header: *PageMallocHeader = page;
