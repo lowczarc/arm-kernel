@@ -19,6 +19,7 @@ comptime {
         \\      orr r3, r3, #0xf
         \\      msr cpsr, r3
         \\      ldm r1!, {sp}
+        \\      ldm r1!, {lr}
         \\      msr cpsr, r2
         \\      ldm r1, {r0-r12, pc}^
     );
@@ -27,6 +28,7 @@ comptime {
 const Regs = extern struct {
     cpsr: u32 = 0,
     sp: u32 = 0,
+    lr: u32 = 0,
     r0: u32 = 0,
     r1: u32 = 0,
     r2: u32 = 0,
@@ -40,7 +42,7 @@ const Regs = extern struct {
     r10: u32 = 0,
     r11: u32 = 0,
     r12: u32 = 0,
-    lr: u32 = 0,
+    pc: u32 = 0,
 };
 
 // For now we only allow to open char device files
@@ -102,7 +104,7 @@ fn copy_process_prog_memory(proc: *Process, prog: anytype) void {
 fn new_process(prog: anytype) *Process {
     var proc: *Process = &pages.kmalloc(Process, 1)[0];
 
-    proc.regs.lr = 0x40000000;
+    proc.regs.pc = 0x40000000;
     proc.TTB_l2 = mmu.allocate_TTB_l2();
 
     copy_process_prog_memory(proc, prog);

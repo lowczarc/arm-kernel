@@ -46,6 +46,8 @@ comptime {
         \\      msr cpsr, r1
         \\      mov r1, sp
         \\      stm r0!, {r1}
+        \\      mov r1, lr
+        \\      stm r0!, {r1}
         \\      msr cpsr, r2
         \\      pop {r1,r2}
 
