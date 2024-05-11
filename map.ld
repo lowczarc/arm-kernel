@@ -8,8 +8,6 @@ SECTIONS
  .bss : { *(.bss COMMON) }
  . = ALIGN(8);
  . = . + 0x1000; /* 4kB of stack memory */
- user_stack_top = .;
- . = . + 0x1000; /* 4kB of stack memory */
  stack_top = .;
  . = . + 0x100; /* 256B of stack memory */
  abort_stack_top = .;

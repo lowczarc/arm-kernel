@@ -7,10 +7,6 @@ _Reset:
 // We set the mode bits to system mode
  MRS r3, cpsr
  MOV r4, r3
- ORR r3, r3, #0x1F
- MSR cpsr, r3
-
- LDR sp, =user_stack_top
 
  // We set the mode bits to abort mode
  BIC r3, r3, #0x1F
